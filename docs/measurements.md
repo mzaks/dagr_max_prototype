@@ -439,3 +439,20 @@ The refactor introduced one bug the in-process tests could not catch: replacing 
 `async with start_process_consumer(...)` branch instead of just its `yield` meant the telemetry
 process never spawned, so `/metrics` served nothing while the worker looked healthy. A GPU run
 caught it; the patch now replaces only the yield.
+
+
+### mmap through mm_mmap instead of hand-rolled syscalls
+`MmapFileDestination` originally called `mmap`/`munmap` itself with macOS constants. It now uses
+[mm_mmap](https://github.com/Mojo-Mania/mm_mmap) (vendored at `2806959`, Apache-2.0):
+`MemoryMap.map_fd` for the mapping, RAII unmapping (growth is an assignment), and `platform_map`
+for `AT_FDCWD` (-2 macOS, -100 Linux), so the destination is no longer macOS-only. What stays
+local is the file plumbing — create, size, trim — and the growth policy.
+
+Both toolchains compile it unchanged (MAX's Mojo 1.1, flare's 1.0). Verified after the swap:
+the mmap log is byte-identical to the buffered one at 4 KB and 64 MB chunks (the 4 KB case
+remaps repeatedly), mid-stream reads, the live tailer (3,000 records), the measurement round
+trip, and a GPU lifetime matching the baseline series (TG 602, ITL 114,656, input tokens
+115,200) at unchanged cost (~15.5 µs build values, ~15.5 µs append).
+
+`flush()` is still a no-op; mm_mmap exposes `flush()` (msync) if durability against an OS crash
+is wanted, not just a process crash.

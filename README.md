@@ -51,6 +51,7 @@ API process ──measurements──┘         │
 | `gen/mojo/` | committed `dagr build` output: the generated sinks and Dagr's Mojo runtime |
 | `gen_record_code.py`, `gen_prom_table.py` | generate the Mojo conversion code and the instrument table (from MAX's own `SERVE_METRICS`) |
 | `metrics_log.mojo`, `measurement_log.mojo`, `pyconv.mojo`, `mmap_destination.mojo` | the Python extension: record/measurement writers, CPython fast paths, the mmap destination |
+| `third_party/mm_mmap/` | vendored [mm_mmap](https://github.com/Mojo-Mania/mm_mmap) (Apache-2.0): POSIX memory mapping for Mojo |
 | `astpatch.py` | find code in MAX by structure, so no MAX source is quoted here |
 | `max_patch.py`, `fast_values_patch.py` | patch a locally installed MAX: record mode, the client swap, the exact `compute_values` speedups |
 | `dagr_metric_client.py`, `record_publish.py`, `measurement_publish.py` | producer-side client and the telemetry-side readers |
@@ -74,7 +75,7 @@ uv pip install -p .venv/bin/python --prerelease=allow "max[serve]==26.6.0.dev202
     --extra-index-url https://whl.modular.com/nightly/simple/ --index-strategy unsafe-best-match
 
 .venv/bin/python gen_record_code.py           # record conversion code from record_spec.py
-.venv/bin/mojo build --emit shared-lib -I gen/mojo -I . metrics_log.mojo -o metrics_log.so
+.venv/bin/mojo build --emit shared-lib -I gen/mojo -I . -I third_party metrics_log.mojo -o metrics_log.so
 PATCH_FAST_VALUES=1 PATCH_KV_SNAPSHOT=1 .venv/bin/python max_patch.py
 
 MEAS=1 MAX_SERVE_RECORD_METRICS_MMAP=1 sh run_server.sh myrun 1 record
@@ -86,8 +87,8 @@ Mojo 1.1; the shared sources compile on both:
 ```sh
 .venv/bin/python gen_prom_table.py runs/myrun.metrics    # instrument table from MAX
 cd ../flare_check && pixi run mojo build -I . -I ../dagr_max_prototype/gen/mojo \
-    -I ../dagr_max_prototype ../dagr_max_prototype/telemetry_server.mojo \
-    -o ../dagr_max_prototype/telemetry_server
+    -I ../dagr_max_prototype -I ../dagr_max_prototype/third_party \
+    ../dagr_max_prototype/telemetry_server.mojo -o ../dagr_max_prototype/telemetry_server
 ```
 
 ## Checks
