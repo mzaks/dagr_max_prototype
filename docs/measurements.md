@@ -22,7 +22,7 @@ uv venv -p 3.12 .venv
 uv pip install -p .venv/bin/python --prerelease=allow "max[serve]==26.6.0.dev2026082707" \
     "mojo==1.1.0.dev2026082707" msgspec \
     --extra-index-url https://whl.modular.com/nightly/simple/ --index-strategy unsafe-best-match
-dagr build                                     # needs Dagr >= b03fad2 (StreamWriter, BufferedFileDestination)
+dagr build                                     # needs Dagr >= 0fa5154 (StreamWriter, BufferedFileDestination)
 .venv/bin/mojo build --emit shared-lib -I gen/mojo batch_log.mojo -o batch_log.so
 .venv/bin/python -I check.py
 for v in append struct_commit numpy_commit dagr_py_commit struct_only numpy_only commit_only jsonl_subset; do

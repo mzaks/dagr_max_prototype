@@ -1,7 +1,7 @@
 # Dagr + Mojo metrics for MAX serve
 
 An experiment: carry [MAX](https://docs.modular.com/max/) serve's metrics as packed
-[Dagr](https://github.com/mzaks) records written from Mojo, instead of Python objects and
+[Dagr](https://codeberg.org/mzaks/dagr) records written from Mojo, instead of Python objects and
 pickled queue traffic — and then rebuild the whole telemetry process, Prometheus endpoint and
 OTLP egress included, in Mojo.
 
@@ -67,7 +67,7 @@ uv pip install -p .venv/bin/python --prerelease=allow "max[serve]==26.6.0.dev202
     "mojo==1.1.0.dev2026082707" msgspec httpx pillow \
     --extra-index-url https://whl.modular.com/nightly/simple/ --index-strategy unsafe-best-match
 
-dagr build                                   # needs Dagr >= b03fad2
+dagr build                                   # needs Dagr >= 0fa5154
 .venv/bin/python gen_record_code.py
 .venv/bin/mojo build --emit shared-lib -I gen/mojo -I . metrics_log.mojo -o metrics_log.so
 PATCH_FAST_VALUES=1 PATCH_KV_SNAPSHOT=1 .venv/bin/python max_patch.py
