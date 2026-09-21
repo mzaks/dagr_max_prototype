@@ -219,3 +219,11 @@ def mono_ns() -> UInt64:
         return UInt64(ts.sec * 1_000_000_000 + ts.nsec)
     else:
         return UInt64(external_call["clock_gettime_nsec_np", Int64](Int32(8)))
+
+
+def _msync_enabled() -> Bool:
+    """DAGR_LOG_MSYNC=0 turns msync off: flushes become no-ops and the page cache is the
+    durability boundary. On by default — msync costs ~34 us per flush here."""
+    from std.os import getenv
+
+    return String(getenv("DAGR_LOG_MSYNC")) != "0"

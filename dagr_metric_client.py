@@ -135,7 +135,9 @@ class DagrMetricClient(MetricClient):
         if not self._rows:
             return
         rows, self._rows = self._rows, []
-        self._open().append_rows(rows)
+        log = self._open()
+        log.append_rows(rows)
+        log.flush()          # msync: bounds what an OS crash can lose to one flush interval
         self._last_flush = time.monotonic()
 
     def cross_process_factory(self, settings):

@@ -183,8 +183,18 @@ def _rec_append(values: tuple) -> None:
     if _SPLIT_ON:
         _rec_append_split(values)
         return
-    if _REC_MMAP:  # bytes are in the page cache on return: nothing to flush
+    if _REC_MMAP:
+        # Bytes are in the page cache on return, so a flush is only about surviving an OS
+        # crash: msync on the same interval, bounding what is at risk to that window.
         _REC_LOG.append_values(values)
+        now = time.monotonic()
+        if now - _REC_LAST_FLUSH >= _REC_FLUSH_S:
+            _REC_LOG.flush()
+            _REC_LAST_FLUSH = now
+            _REC_PENDING = False
+            _REC_FLUSH_COUNTS[0] += 1
+        else:
+            _REC_PENDING = True
         return
     _REC_LOG.append_values(values)
     now = time.monotonic()
@@ -210,7 +220,7 @@ def _rec_append_split(values: tuple) -> None:
     _REC_LOG.append_values_timed(values)
     t1 = pc()
     now = time.monotonic()
-    flushed = not _REC_MMAP and now - _REC_LAST_FLUSH >= _REC_FLUSH_S
+    flushed = now - _REC_LAST_FLUSH >= _REC_FLUSH_S
     t2 = t3 = 0
     if flushed:
         t2 = pc()
@@ -219,7 +229,7 @@ def _rec_append_split(values: tuple) -> None:
         _REC_LAST_FLUSH = now
         _REC_PENDING = False
         _REC_FLUSH_COUNTS[0] += 1
-    elif not _REC_MMAP:
+    else:
         _REC_PENDING = True
     _SPLIT_LAST[0] = t1 - t0
     _SPLIT_LAST[1] = t3 - t2

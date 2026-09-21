@@ -454,5 +454,27 @@ remaps repeatedly), mid-stream reads, the live tailer (3,000 records), the measu
 trip, and a GPU lifetime matching the baseline series (TG 602, ITL 114,656, input tokens
 115,200) at unchanged cost (~15.5 µs build values, ~15.5 µs append).
 
-`flush()` is still a no-op; mm_mmap exposes `flush()` (msync) if durability against an OS crash
-is wanted, not just a process crash.
+### msync: what durability against an OS crash costs
+`flush()` now msyncs the log and then the sidecar (that order: the committed length must not
+reach disk before the bytes it points at), on by default, `DAGR_LOG_MSYNC=0` to disable.
+`close()` flushes before trimming. In mmap mode the record path now honours its flush interval
+instead of returning early, so what an OS crash can lose is bounded by that window.
+
+Microbench: 34 µs blocking / 11 µs async for 100 KB dirty, and the cost tracks dirty pages, not
+mapping size (a 1 MB mapping costs the same as 64 MB). Live, msync costs 83–115 µs — the same
+~2.5× cold-code factor as everything else in this worker.
+
+It also has a second-order cost. msync re-arms write protection on the pages it cleans, so the
+next stores fault again: with a flush on nearly every step, the encode stage rose from ~4.7 µs
+to 12.5–12.8 µs. At a 1 s interval that effect disappears (encode back to 5.1–5.3 µs).
+
+| record_append, batch 32 (median) | no msync | msync, 0.05 s | msync, 1 s |
+|---|---|---|---|
+| step without a flush | 15.3 µs | 26.8 µs | 17.0–18.0 µs |
+| step with a flush | — | 113.6 µs | 109.9–133.7 µs |
+| flushes per 600 steps | 0 | 549 | 93 |
+| stage median | 15.3 µs | 113.6 µs | 17.3–18.3 µs |
+
+So the interval is the whole trade: at 0.05 s nearly every step pays msync, at 1 s roughly one
+step in six does (~14 µs per step amortised at batch 32) and the window at risk is a second.
+Published metrics were identical to baseline in both runs.

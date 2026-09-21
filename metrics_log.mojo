@@ -25,7 +25,7 @@ from MaxBatchMetricsSink import (
 )
 from metrics_record_gen import N_VALUES, rec_to_values, subrecord_names, values_to_rec
 from measurement_log import MeasurementLog, decode_measurements, measurements_start
-from pyconv import ConvCache, mono_ns, now_ns, py_int, py_tuple
+from pyconv import ConvCache, _msync_enabled, mono_ns, now_ns, py_int, py_tuple
 
 
 struct MetricsLog(Defaultable, Movable, Writable):
@@ -153,7 +153,7 @@ struct MetricsLogMmap(Defaultable, Movable, Writable):
         var header = MetricsLogHeader(String(py=args[1]), String(py=args[2]))
         self.writer = Optional(
             MaxBatchMetricsStreamWriter(
-                MmapFileDestination(String(py=args[0]), Int(py=args[3])),
+                MmapFileDestination(String(py=args[0]), Int(py=args[3]), _msync_enabled()),
                 header^,
             )
         )

@@ -1,0 +1,5 @@
+label=msync_1s_1 stage=1 mode=record
+17:15:46.661 INFO: PROTOTYPE stages (us) after 200 steps: create med 18.0 p90 21.7 mean 19.2 max 98.9 | publish med 0.1 p90 0.1 mean 0.1 max 0.2 | record_append med 34.8 p90 426.7 mean 119.6 max 580.4 | log_line med 0.5 p90 136.3 mean 21.9 max 308.2 | flushes append 68 idle 0 idle_mean 0.0
+17:16:00.953 INFO: PROTOTYPE stages (us) after 400 steps: create med 15.2 p90 18.1 mean 15.7 max 27.5 | publish med 0.1 p90 0.2 mean 0.1 max 0.3 | record_append med 18.3 p90 35.2 mean 28.6 max 450.5 | log_line med 0.4 p90 0.6 mean 3.8 max 271.8 | flushes append 81 idle 1 idle_mean 92.8
+17:16:18.160 INFO: PROTOTYPE stages (us) after 600 steps: create med 15.4 p90 18.3 mean 15.9 max 29.8 | publish med 0.1 p90 0.2 mean 0.1 max 0.3 | record_append med 17.3 p90 31.0 mean 23.9 max 135.5 | log_line med 0.4 p90 0.6 mean 18659.1 max 3730982.6 | flushes append 93 idle 1 idle_mean 92.8
+done

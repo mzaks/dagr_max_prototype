@@ -23,7 +23,7 @@ from MaxMeasurementsSink import (
 from dagr_reader import read_leb
 from dagr_writer import leb_length
 from mmap_destination import MmapFileDestination
-from pyconv import as_f64, as_int, py_f64, py_int, py_tuple, tuple_item
+from pyconv import _msync_enabled, as_f64, as_int, py_f64, py_int, py_tuple, tuple_item
 
 
 struct MeasurementLog(Defaultable, Movable, Writable):
@@ -49,7 +49,7 @@ struct MeasurementLog(Defaultable, Movable, Writable):
         self = MeasurementLog()
         var header = MeasurementLogHeader(String(py=args[1]), UInt64(Int(py=args[2])))
         self.writer = Optional(
-            MaxMeasurementsStreamWriter(MmapFileDestination(String(py=args[0])), header^)
+            MaxMeasurementsStreamWriter(MmapFileDestination(String(py=args[0]), 64 << 20, _msync_enabled()), header^)
         )
         self.writer.value().ensure_framing()
 
