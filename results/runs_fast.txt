@@ -7,11 +7,11 @@ label=record_fast_2 stage=1 mode=record
 18:31:50.250 INFO: PROTOTYPE stages (us) after 400 steps: create med 20.4 p90 24.2 mean 21.2 max 52.9 | publish med 0.2 p90 0.3 mean 0.2 max 0.4 | record_append med 15.0 p90 22.6 mean 17.9 max 84.3 | log_line med 0.5 p90 0.7 mean 8.1 max 1051.8 | flushes append 64 idle 1 idle_mean 18.8
 18:32:03.404 INFO: PROTOTYPE stages (us) after 600 steps: create med 21.2 p90 26.1 mean 22.4 max 80.4 | publish med 0.2 p90 0.3 mean 0.2 max 0.5 | record_append med 14.6 p90 22.5 mean 17.2 max 55.5 | log_line med 0.5 p90 0.7 mean 4.3 max 324.8 | flushes append 77 idle 1 idle_mean 18.8
 Traceback (most recent call last):
-  File "/Users/mzaks_pro/dev/dagr_max_prototype/max_patch.py", line 371, in <module>
+  File "<repo>/max_patch.py", line 371, in <module>
     patch_utils()
-  File "/Users/mzaks_pro/dev/dagr_max_prototype/max_patch.py", line 261, in patch_utils
+  File "<repo>/max_patch.py", line 261, in patch_utils
     compile(out, UTILS, "exec")
-  File "/Users/mzaks_pro/dev/dagr_max_prototype/.venv/lib/python3.12/site-packages/max/serve/scheduler/utils.py", line 334
+  File "<repo>/.venv/lib/python3.12/site-packages/max/serve/scheduler/utils.py", line 334
     if num_replicas == 1:  # PROTOTYPE fast path, same values
        ^
 IndentationError: unexpected indent
