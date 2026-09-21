@@ -420,3 +420,22 @@ Not covered: delta temporality (MAX configures DELTA for a user-supplied OTLP en
 exponential shadow histograms (MAX sends those to OTLP only), `start_time_unix_nano` semantics
 beyond "first observation seen", resource attributes beyond `service.name`, retries/backoff,
 gzip, and gRPC transport.
+
+
+### Patches located by AST, not by quoting MAX
+The patch scripts used to anchor on verbatim excerpts of MAX source (~280 lines across the two
+files), which the Modular MAX Community License does not permit redistributing. Every anchor is
+now an AST lookup (`astpatch.py`): the assignment calling `BatchMetrics.create`, the `With` on
+`METRICS.transaction`, the `Return` calling `process_telemetry`, the `While True` scheduler loop
+and its `SchedulerProgress.NO_PROGRESS` branch, the `async with start_process_consumer`, the
+`__post_init__` / `batch_size` / `metrics` functions, the three block-count assignments, the
+`if kv_cache is not None` block, and the `for m in ms` commit loop. Replacements that must keep
+MAX's code lift it from the file at patch time.
+
+Dropped rather than converted: the per-section timers inside `compute_values`, which needed
+line-level anchors. Their results (batch_size ~33 µs, KV metrics ~10 µs at batch 512) are above.
+
+The refactor introduced one bug the in-process tests could not catch: replacing the whole
+`async with start_process_consumer(...)` branch instead of just its `yield` meant the telemetry
+process never spawned, so `/metrics` served nothing while the worker looked healthy. A GPU run
+caught it; the patch now replaces only the yield.

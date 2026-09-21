@@ -50,6 +50,7 @@ API process ──measurements──┘         │
 | `schema.py`, `record_spec.py` | Dagr schemas; the single source for the record's fields |
 | `gen_record_code.py`, `gen_prom_table.py` | generate the Mojo conversion code and the instrument table (from MAX's own `SERVE_METRICS`) |
 | `metrics_log.mojo`, `measurement_log.mojo`, `pyconv.mojo`, `mmap_destination.mojo` | the Python extension: record/measurement writers, CPython fast paths, the mmap destination |
+| `astpatch.py` | find code in MAX by structure, so no MAX source is quoted here |
 | `max_patch.py`, `fast_values_patch.py` | patch a locally installed MAX: record mode, the client swap, the exact `compute_values` speedups |
 | `dagr_metric_client.py`, `record_publish.py`, `measurement_publish.py` | producer-side client and the telemetry-side readers |
 | `prom_core.mojo`, `prom_agg.mojo`, `otlp.mojo` | aggregation, Prometheus rendering, OTLP protobuf |
@@ -103,11 +104,10 @@ works **in object code form only**. Two consequences:
 
 1. The `*.orig` files are pristine copies of MAX source made by the patch scripts. They are
    git-ignored and must stay that way.
-2. `max_patch.py` and `fast_values_patch.py` locate the code they rewrite using **verbatim
-   excerpts of MAX source** as anchors (~280 lines across both). Publishing them publicly
-   redistributes that source in source form. Before making this repository public, either keep
-   it private, get Modular's blessing, or replace the anchors with structural (AST) matching so
-   no MAX source is embedded.
+2. `max_patch.py` and `fast_values_patch.py` carry **no MAX source**. Every edit is located
+   through the AST (`astpatch.py`) — by class, function, and the names being assigned or
+   called — and where a replacement has to keep MAX's own code (a fallback branch, a wrapped
+   loop), it is lifted from the file being patched at runtime.
 
 `NOTICE` carries the attribution the licence requires. Dagr itself and everything else here is
 the author's own work.

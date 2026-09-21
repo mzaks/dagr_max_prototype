@@ -9,10 +9,17 @@ Every change keeps the published values identical:
     27 fields (x + 0 == x for every field).
   - compute_values: DP == 1 reads one BlockCount per tier without list comprehensions and
     generator sums.
+
+Every edit is located through the AST (see astpatch.py): by class, function and the names being
+assigned or called. Where a replacement has to keep MAX's own code, it is lifted from the file
+being patched, so no MAX source is carried in this repository.
 """
 
+import ast
 import os
 import shutil
+
+import astpatch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.join(HERE, ".venv", "lib", "python3.12", "site-packages", "max")
@@ -25,41 +32,6 @@ def _pristine(path: str, backup: str) -> str:
         shutil.copyfile(path, backup)
     return open(backup).read()
 
-
-def _replace_once(src: str, old: str, new: str) -> str:
-    assert src.count(old) == 1, old
-    return src.replace(old, new, 1)
-
-
-INPUTS_POST_INIT_OLD = """    def __post_init__(self) -> None:
-        self.input_tokens = sum(
-            ctx.tokens.active_length for ctx in self.flat_batch
-        )
-        self.context_tokens = sum(
-            ctx.tokens.processed_length for ctx in self.flat_batch
-        )
-        self.per_replica_input_tokens = [
-            sum(
-                ctx.tokens.active_length
-                for ctx in batch
-                if not getattr(ctx, "_is_padding_ctx", False)
-            )
-            for batch in self.batches
-        ]
-        self.per_replica_context_tokens = [
-            sum(
-                ctx.tokens.processed_length
-                for ctx in batch
-                if not getattr(ctx, "_is_padding_ctx", False)
-            )
-            for batch in self.batches
-        ]
-        self.batch_type = BatchType.TG
-        for context in self.flat_batch:
-            if context.tokens.generated_length == 0:
-                self.batch_type = BatchType.CE
-                break
-"""
 
 INPUTS_POST_INIT_NEW = """    def __post_init__(self) -> None:
         # PROTOTYPE: one pass per replica; also counts DP padding contexts for batch_size.
@@ -95,15 +67,7 @@ INPUTS_POST_INIT_NEW = """    def __post_init__(self) -> None:
         self.batch_type = BatchType.CE if is_ce else BatchType.TG
 """
 
-BATCH_SIZE_OLD = """        return sum(
-            1 for context in self.flat_batch if not context._is_padding_ctx
-        )
-"""
-
 BATCH_SIZE_NEW = """        return sum(map(len, self.batches)) - self._num_padding_ctx  # PROTOTYPE
-"""
-
-METRICS_OLD = """        return self._metrics + self.connector.metrics
 """
 
 METRICS_NEW = """        # PROTOTYPE: a null/default connector always reports an empty KVCacheMetrics and
@@ -111,7 +75,7 @@ METRICS_NEW = """        # PROTOTYPE: a null/default connector always reports an
         # The only caller (BatchMetrics) reads the fields and then calls reset_metrics.
         if type(self.connector).metrics in _empty_connector_metrics():
             return self._metrics
-        return self._metrics + self.connector.metrics
+{original}
 """
 
 METRICS_HELPER = """
@@ -130,65 +94,30 @@ def _empty_connector_metrics() -> tuple:
     return _EMPTY_CONNECTOR_METRICS
 """
 
-BLOCK_COUNTS = [
-    (
-        """            block_counts = [
-                kv_cache.block_count(replica_idx)
-                for replica_idx in range(num_replicas)
-            ]
-            total_kv_blocks = sum(bc.total for bc in block_counts)
-            used_kv_blocks = sum(bc.used for bc in block_counts)
-""",
-        """            if num_replicas == 1:  # PROTOTYPE fast path, same values
+# The three per-tier block-count reads in compute_values, by the local each one assigns.
+# At DP == 1 a single call replaces the comprehension; the original statements stay as the
+# else branch, taken from the file being patched (never quoted here).
+BLOCK_COUNT_FAST = {
+    "block_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
                 _bc = kv_cache.block_count(0)
                 total_kv_blocks = _bc.total
                 used_kv_blocks = _bc.used
             else:
-                block_counts = [
-                    kv_cache.block_count(replica_idx)
-                    for replica_idx in range(num_replicas)
-                ]
-                total_kv_blocks = sum(bc.total for bc in block_counts)
-                used_kv_blocks = sum(bc.used for bc in block_counts)
+{original}
 """,
-    ),
-    (
-        """            host_block_counts = [
-                kv_cache.host_block_count(replica_idx)
-                for replica_idx in range(num_replicas)
-            ]
-            total_host_kv_blocks = sum(bc.total for bc in host_block_counts)
-""",
-        """            if num_replicas == 1:  # PROTOTYPE fast path, same values
+    "host_block_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
                 host_block_counts = (kv_cache.host_block_count(0),)
                 total_host_kv_blocks = host_block_counts[0].total
             else:
-                host_block_counts = [
-                    kv_cache.host_block_count(replica_idx)
-                    for replica_idx in range(num_replicas)
-                ]
-                total_host_kv_blocks = sum(bc.total for bc in host_block_counts)
+{original}
 """,
-    ),
-    (
-        """            disk_block_counts = [
-                kv_cache.disk_block_count(replica_idx)
-                for replica_idx in range(num_replicas)
-            ]
-            total_disk_kv_blocks = sum(bc.total for bc in disk_block_counts)
-""",
-        """            if num_replicas == 1:  # PROTOTYPE fast path, same values
+    "disk_block_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
                 disk_block_counts = (kv_cache.disk_block_count(0),)
                 total_disk_kv_blocks = disk_block_counts[0].total
             else:
-                disk_block_counts = [
-                    kv_cache.disk_block_count(replica_idx)
-                    for replica_idx in range(num_replicas)
-                ]
-                total_disk_kv_blocks = sum(bc.total for bc in disk_block_counts)
+{original}
 """,
-    ),
-]
+}
 
 
 def enabled() -> bool:
@@ -196,16 +125,57 @@ def enabled() -> bool:
 
 
 def fast_block_counts(utils_src: str) -> str:
-    for old, new in BLOCK_COUNTS:
-        utils_src = _replace_once(utils_src, old, new)
+    """Wrap each per-tier block-count read in a DP == 1 fast path.
+
+    The three statements are found by the local they assign inside `compute_values`; the
+    original comprehension and its sums become the else branch, lifted from the source.
+    """
+    for local, template in BLOCK_COUNT_FAST.items():
+        tree = astpatch.parse(utils_src)
+        fn = astpatch.find_function(tree, "compute_values", in_class="BatchMetrics")
+        assign = astpatch.find_stmt(fn, lambda n, local=local: astpatch.assigns_to(n, local))
+        # the assignment plus the sum(s) that immediately follow it, up to the next blank line
+        block = [assign]
+        body = _enclosing_body(fn, assign)
+        idx = body.index(assign)
+        for stmt in body[idx + 1:]:
+            if isinstance(stmt, ast.Assign) and astpatch.calls(stmt, "sum"):
+                block.append(stmt)
+            elif isinstance(stmt, ast.Assert):
+                block.append(stmt)
+            else:
+                break
+        start, _ = astpatch.lines_of(utils_src, block[0])
+        _, end = astpatch.lines_of(utils_src, block[-1])
+        original = "".join(utils_src.splitlines(keepends=True)[start:end])
+        utils_src = astpatch.replace_lines(
+            utils_src, start, end,
+            template.format(original=astpatch.reindent(original, "    ")),
+        )
     return utils_src
+
+
+def _enclosing_body(scope: ast.AST, stmt: ast.stmt) -> list:
+    """The statement list that directly contains `stmt`."""
+    for node in ast.walk(scope):
+        for field in ("body", "orelse", "finalbody"):
+            body = getattr(node, field, None)
+            if isinstance(body, list) and stmt in body:
+                return body
+    raise astpatch.NotFound("enclosing body")
 
 
 def patch_inputs() -> None:
     src = _pristine(INPUTS, os.path.join(HERE, "text_generation.py.orig"))
     if enabled():
-        src = _replace_once(src, INPUTS_POST_INIT_OLD, INPUTS_POST_INIT_NEW)
-        src = _replace_once(src, BATCH_SIZE_OLD, BATCH_SIZE_NEW)
+        tree = astpatch.parse(src)
+        post_init = astpatch.find_function(tree, "__post_init__",
+                                           in_class="TextGenerationInputs")
+        src = astpatch.replace_stmt(src, post_init, INPUTS_POST_INIT_NEW)
+        tree = astpatch.parse(src)
+        batch_size = astpatch.find_function(tree, "batch_size",
+                                            in_class="TextGenerationInputs")
+        src = astpatch.replace_body(src, batch_size, BATCH_SIZE_NEW)
     compile(src, INPUTS, "exec")
     open(INPUTS, "w").write(src)
 
@@ -213,7 +183,12 @@ def patch_inputs() -> None:
 def patch_block_manager() -> None:
     src = _pristine(BLOCK_MANAGER, os.path.join(HERE, "block_manager.py.orig"))
     if enabled():
-        src = _replace_once(src, METRICS_OLD, METRICS_NEW) + METRICS_HELPER
+        tree = astpatch.parse(src)
+        metrics = astpatch.find_function(tree, "metrics", in_class="BlockManager")
+        # keep MAX's own expression as the fallback, read from the file
+        original = astpatch.reindent(astpatch.segment(src, metrics.body[-1]), "        ")
+        src = astpatch.replace_body(src, metrics, METRICS_NEW.format(original=original))
+        src += METRICS_HELPER
     compile(src, BLOCK_MANAGER, "exec")
     open(BLOCK_MANAGER, "w").write(src)
 
@@ -355,26 +330,38 @@ def snapshot_enabled() -> bool:
 def patch_cache_manager() -> None:
     src = _pristine(CACHE_MANAGER, os.path.join(HERE, "cache_manager.py.orig"))
     if snapshot_enabled():
-        anchor = "    def get_metrics_aggregated(self) -> KVCacheMetrics:\n"
-        src = _replace_once(src, anchor, SNAPSHOT_METHOD.lstrip("\n") + "\n" + anchor) + SNAPSHOT_HELPERS
+        tree = astpatch.parse(src)
+        sibling = astpatch.find_function(tree, "get_metrics_aggregated",
+                                         in_class="PagedKVCacheManager")
+        src = astpatch.insert_before(src, sibling, SNAPSHOT_METHOD.lstrip("\n") + "\n")
+        src += SNAPSHOT_HELPERS
     compile(src, CACHE_MANAGER, "exec")
     open(CACHE_MANAGER, "w").write(src)
 
 
 def kv_snapshot_call(utils_src: str) -> str:
-    """compute_values: use kv_cache.metrics_snapshot when the manager has it; the original
-    per-call block stays as the fallback (other managers, test mocks)."""
-    start_anchor = "        if kv_cache is not None:\n            # TODO SERVOPT-939: Add some sugar\n"
-    end_anchor = "            kv_cache.reset_metrics()\n"
-    assert utils_src.count(start_anchor) == 1 and utils_src.count(end_anchor) == 1
+    """compute_values: use kv_cache.metrics_snapshot when the manager has it.
+
+    The block to wrap is the `if kv_cache is not None:` branch inside compute_values; it stays
+    as the elif fallback for managers without the method (and for test mocks), lifted from the
+    file rather than quoted here.
+    """
+    tree = astpatch.parse(utils_src)
+    fn = astpatch.find_function(tree, "compute_values", in_class="BatchMetrics")
+    block = astpatch.find_stmt(
+        fn, lambda n: isinstance(n, ast.If) and isinstance(n.test, ast.Compare)
+        and astpatch.name_of(n.test.left) == ["kv_cache"]
+        and isinstance(n.test.ops[0], ast.IsNot))
+    start, end = astpatch.lines_of(utils_src, block)
+    original = "".join(utils_src.splitlines(keepends=True)[start:end])
+    original = original.replace("if kv_cache is not None:", "elif kv_cache is not None:", 1)
     names = ",\n".join(f"                {n}" for n in KV_SNAPSHOT_NAMES)
-    new_head = (
+    head = (
         "        _kv_snapshot = (  # PROTOTYPE: one KV-cache call\n"
         "            None if kv_cache is None else getattr(kv_cache, \"metrics_snapshot\", None)\n"
         "        )\n"
         "        if _kv_snapshot is not None:\n"
         "            (\n" + names + ",\n"
         "            ) = _kv_snapshot(num_replicas)\n"
-        "        elif kv_cache is not None:\n            # TODO SERVOPT-939: Add some sugar\n"
     )
-    return utils_src.replace(start_anchor, new_head, 1)
+    return astpatch.replace_lines(utils_src, start, end, head + original)

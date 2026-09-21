@@ -12,7 +12,6 @@
     - with MAX_SERVE_RECORD_METRICS set, the telemetry process tails the log and publishes.
   PATCH_FAST_VALUES=1: exact compute_values speedups, see fast_values_patch.py
   PATCH_KV_SNAPSHOT=1: PagedKVCacheManager.metrics_snapshot, one KV call in compute_values
-  PATCH_CV_TIMING=1: per-section timers inside compute_values
   serve/pipelines/model_worker.py
     - every NO_PROGRESS iteration (and worker-loop exit) flushes records still buffered.
 
@@ -22,6 +21,8 @@ Run: python3 max_patch.py
 import ast
 import os
 import shutil
+
+import astpatch
 
 import fast_values_patch
 from record_spec import NAMES
@@ -99,29 +100,21 @@ def patch_utils() -> None:
     # decorator of the original create already precedes compute_values; the new create needs
     # @classmethod — added above. The return annotation of compute_values now lies (tuple).
 
-    # 3) log_metrics: record mode + stage timing
-    old = """        metrics = BatchMetrics.create(
-            sch_config=sch_config,
-            inputs=inputs,
-            kv_cache=kv_cache,"""
-    assert out.count(old) == 1
-    out = out.replace(old, """        _t0 = time.perf_counter_ns()  # PROTOTYPE
+    # 3) log_metrics: record mode + stage timing, located through the AST
+    tree = ast.parse(out)
+    log_metrics = next(n for n in ast.walk(tree)
+                       if isinstance(n, ast.FunctionDef) and n.name == "log_metrics")
+    create_call = astpatch.find_stmt(
+        log_metrics, lambda n: astpatch.assigns_to(n, "metrics")
+        and astpatch.calls(n, "BatchMetrics.create"))
+    # the record path calls compute_values with the call site's own arguments
+    call = create_call.value
+    args = "".join(f"                {kw.arg}={astpatch.segment(out, kw.value)},\n"
+                   for kw in call.keywords)
+    record_mode = f"""        _t0 = time.perf_counter_ns()  # PROTOTYPE
         if _REC_PATH:  # PROTOTYPE design 1: record instead of object + publish
             values = BatchMetrics.compute_values(
-                sch_config=sch_config,
-                inputs=inputs,
-                kv_cache=kv_cache,
-                batch_creation_time_s=batch_creation_time_s,
-                batch_execution_time_s=batch_execution_time_s,
-                num_pending_reqs=num_pending_reqs,
-                num_terminated_reqs=num_terminated_reqs,
-                total_preemption_count=total_preemption_count,
-                batch_spec_decode_metrics=batch_spec_decode_metrics,
-                batch_vision_metrics=batch_vision_metrics,
-                batch_video_metrics=batch_video_metrics,
-                overlap_active=overlap_active,
-                completed_batch_stats=completed_batch_stats,
-            )
+{args}            )
             _t1 = time.perf_counter_ns()
             metrics = None
             _t2 = time.perf_counter_ns()
@@ -137,44 +130,30 @@ def patch_utils() -> None:
             _stage_record(_t1 - _t0, _t2 - _t1, _t3 - _t2, time.perf_counter_ns() - _t3)
             return
 
-        metrics = BatchMetrics.create(
-            sch_config=sch_config,
-            inputs=inputs,
-            kv_cache=kv_cache,""", 1)
-    old = """        with METRICS.transaction():
-            metrics.publish_metrics(defer_execution_metrics=overlap_active)
-            if completed_batch_stats is not None:
-                publish_completed_batch_metrics(
-                    completed_batch_stats, num_terminated_reqs
-                )
-
-        # Only periodically log batch info to the console to avoid log spam.
-        now = time.monotonic()
-        time_since_last_log = now - self.time_of_last_log
-        if self.log_interval_s < time_since_last_log:
-            # Reset the time of the last log.
-            self.time_of_last_log = now
-            logger.info(metrics.pretty_format(), extra=metrics.to_log_extra())
 """
-    assert out.count(old) == 1
-    out = out.replace(old, """        _t1 = time.perf_counter_ns()  # PROTOTYPE
-        with METRICS.transaction():
-            metrics.publish_metrics(defer_execution_metrics=overlap_active)
-            if completed_batch_stats is not None:
-                publish_completed_batch_metrics(
-                    completed_batch_stats, num_terminated_reqs
-                )
-        _t2 = time.perf_counter_ns()  # PROTOTYPE
+    out = astpatch.insert_before(out, create_call, record_mode)
 
-        # Only periodically log batch info to the console to avoid log spam.
-        now = time.monotonic()
-        time_since_last_log = now - self.time_of_last_log
-        if self.log_interval_s < time_since_last_log:
-            # Reset the time of the last log.
-            self.time_of_last_log = now
-            logger.info(metrics.pretty_format(), extra=metrics.to_log_extra())
-        _stage_record(_t1 - _t0, _t2 - _t1, 0, time.perf_counter_ns() - _t2)  # PROTOTYPE
-""", 1)
+    # bracket the publish transaction with stage timers, and time the log line after it
+    tree = ast.parse(out)
+    log_metrics = next(n for n in ast.walk(tree)
+                       if isinstance(n, ast.FunctionDef) and n.name == "log_metrics")
+    publish = astpatch.find_stmt(
+        log_metrics, lambda n: isinstance(n, ast.With) and astpatch.calls(n, "METRICS.transaction"))
+    _, publish_end = astpatch.lines_of(out, publish)
+    out = astpatch.replace_lines(
+        out, publish_end, publish_end,
+        "        _t2 = time.perf_counter_ns()  # PROTOTYPE\n")
+    out = astpatch.insert_before(
+        out, publish, "        _t1 = time.perf_counter_ns()  # PROTOTYPE\n")
+    # after the periodic log line, which is the last statement of log_metrics
+    tree = ast.parse(out)
+    log_metrics = next(n for n in ast.walk(tree)
+                       if isinstance(n, ast.FunctionDef) and n.name == "log_metrics")
+    _, fn_end = astpatch.lines_of(out, log_metrics.body[-1])
+    out = astpatch.replace_lines(
+        out, fn_end, fn_end,
+        "        _stage_record(_t1 - _t0, _t2 - _t1, 0, time.perf_counter_ns() - _t2)"
+        "  # PROTOTYPE\n")
     out += '''
 
 # ---- PROTOTYPE (~/dev/dagr_max_prototype, design 1) ----------------------------------
@@ -337,95 +316,43 @@ def _stage_record(create_ns: int, publish_ns: int, append_ns: int, log_ns: int) 
         out = fast_values_patch.fast_block_counts(out)
     if fast_values_patch.snapshot_enabled():
         out = fast_values_patch.kv_snapshot_call(out)
-    if os.environ.get("PATCH_CV_TIMING") == "1":
-        out = add_cv_timing(out)
     compile(out, UTILS, "exec")
     open(UTILS, "w").write(out)
 
 
-CV_SECTIONS = (
-    # (anchor the checkpoint is inserted before, name of the section that ends there)
-    ("        total_kv_blocks = 0\n", "throughput"),
-    ("        if kv_cache is not None:\n            # TODO SERVOPT-939", "zero_init_dp"),
-    ("            total_kv_blocks = sum(bc.total for bc in block_counts)\n", "block_count_calls"),
-    ("            host_block_counts = [\n", "device_sums"),
-    ("            total_host_kv_blocks = sum(bc.total for bc in host_block_counts)\n", "host_block_count_calls"),
-    ("            metrics_agg = kv_cache.get_metrics_aggregated()\n", "host_sum"),
-    ("\n            if total_host_kv_blocks > 0:\n", "get_metrics_aggregated"),
-    ("            disk_block_counts = [\n", "agg_attrs"),
-    ("            # dKV latency metrics: sum across replicas then average.\n", "disk_block_counts"),
-    ("            kv_cache.reset_metrics()\n", "agg_props"),
-    ("        # Capture per-request KV cache hit rates", "reset_metrics"),
-    ("        draft_tokens_generated = 0\n", "ce_scan"),
-    ("        return (  # PROTOTYPE: values in record_spec order\n", "spec"),
-)
-
-
-def add_cv_timing(out: str) -> str:
-    start = out.index("    def compute_values(")
-    end = out.index("        return (  # PROTOTYPE: values in record_spec order\n") + 200
-    body = out[start:end]
-    first = "        num_input_tokens = inputs.input_tokens\n"
-    body = body.replace(first, "        _pc = time.perf_counter_ns; _cv = [_pc()]  # PROTOTYPE cv timing\n" + first, 1)
-    for anchor, name in CV_SECTIONS:
-        # match whole lines only: a fast-path patch may re-indent the same statement
-        key = anchor if anchor.startswith("\n") else "\n" + anchor
-        if body.count(key) != 1:  # removed by a fast-path patch: merges into the next section
-            continue
-        line = key[1:]
-        indent = line[: len(line) - len(line.lstrip(" "))]
-        body = body.replace(key, f"\n{indent}_cv.append(_pc())  # {name}" + key, 1)
-    body = body.replace(
-        "        return (  # PROTOTYPE: values in record_spec order\n",
-        "        _cv_record(_cv)\n        return (  # PROTOTYPE: values in record_spec order\n", 1)
-    out = out[:start] + body + out[end:]
-    names = [n for _, n in CV_SECTIONS if f"_cv.append(_pc())  # {n}\n" in body]
-    out += f'''
-
-_CV_NAMES = {names!r}
-_CV_SAMPLES: list[list[int]] = []
-
-
-def _cv_record(cv: list[int]) -> None:
-    _CV_SAMPLES.append([b - a for a, b in zip(cv, cv[1:])])
-    if len(_CV_SAMPLES) == 200:
-        cols = list(zip(*_CV_SAMPLES))
-        parts = []
-        for name, col in zip(_CV_NAMES, cols):
-            d = sorted(col)
-            parts.append(f"{{name}} {{d[len(d) // 2] / 1e3:.2f}}/{{sum(d) / len(d) / 1e3:.2f}}")
-        logger.info("PROTOTYPE compute_values sections (us, med/mean, n=%d): %s", len(cols[0]), " | ".join(parts))
-        _CV_SAMPLES.clear()
-'''
-    return out
-
-
 def patch_telemetry_worker() -> None:
     """MAX_SERVE_MEASUREMENT_LOG=<dir>: the API process (and, through cross_process_factory,
-    the model worker) records measurements into a Dagr stream instead of the queue."""
+    the model worker) records measurements into a Dagr stream instead of the queue.
+
+    Only the `yield` inside the branch is replaced: the surrounding `async with
+    start_process_consumer(...)` must still run, because that is what spawns the telemetry
+    process that serves /metrics. The original yield stays as the else branch.
+    """
     src = pristine(TEL_WORKER, os.path.join(HERE, "telemetry_worker.py.orig"))
-    old = """    elif method == MetricRecordingMethod.PROCESS:
-        async with start_process_consumer(settings) as controller:
-            yield controller.Client()
-"""
-    assert src.count(old) == 1
-    src = src.replace(old, """    elif method == MetricRecordingMethod.PROCESS:
-        async with start_process_consumer(settings) as controller:
-            _dir = os.environ.get("MAX_SERVE_MEASUREMENT_LOG")  # PROTOTYPE
-            if _dir:
-                import sys
+    tree = astpatch.parse(src)
+    consumer = astpatch.find_function(tree, "start_telemetry_consumer")
+    branch = astpatch.find_stmt(
+        consumer, lambda n: isinstance(n, ast.AsyncWith)
+        and astpatch.calls(n, "start_process_consumer"))
+    original_yield = astpatch.find_stmt(
+        branch, lambda n: isinstance(n, ast.Expr) and isinstance(n.value, ast.Yield))
+    indent = astpatch.indent_of(src, original_yield)
+    original = astpatch.reindent(astpatch.segment(src, original_yield) + "\n", indent + "    ")
+    replacement = astpatch.reindent(f"""_dir = os.environ.get("MAX_SERVE_MEASUREMENT_LOG")  # PROTOTYPE
+if _dir:
+    import sys
 
-                sys.path.insert(0, os.environ["MAX_SERVE_RECORD_METRICS_MODULE_DIR"])
-                from dagr_metric_client import DagrMetricClient
+    sys.path.insert(0, os.environ["MAX_SERVE_RECORD_METRICS_MODULE_DIR"])
+    from dagr_metric_client import DagrMetricClient
 
-                client = DagrMetricClient(_dir)
-                try:
-                    yield client
-                finally:
-                    client.close()
-            else:
-                yield controller.Client()
-""", 1)
+    client = DagrMetricClient(_dir)
+    try:
+        yield client
+    finally:
+        client.close()
+else:
+""", indent) + original
+    src = astpatch.replace_stmt(src, original_yield, replacement)
     if "\nimport os\n" not in src:
         src = "import os  # PROTOTYPE\n" + src
     compile(src, TEL_WORKER, "exec")
@@ -436,23 +363,22 @@ def patch_process_controller() -> None:
     src = pristine(PROC, os.path.join(HERE, "process_controller.py.orig"))
     # MAX_SERVE_TELEMETRY_TIMING=1: time the commit loop (OTel aggregation) in the telemetry
     # process, the same work record mode does via record_publish. One batch per scheduler step.
-    old_loop = """            try:
-                for m in ms:
-                    commit_fn(m)
-            except:
-"""
-    assert src.count(old_loop) == 1
-    src = src.replace(old_loop, """            try:
-                if _TEL_TIMING:  # PROTOTYPE
-                    _t0 = time.perf_counter_ns()
-                    for m in ms:
-                        commit_fn(m)
-                    _tel_record(time.perf_counter_ns() - _t0, len(ms))
-                else:
-                    for m in ms:
-                        commit_fn(m)
-            except:
-""", 1)
+    # Time the commit loop (OTel aggregation) — the same work record mode does via
+    # record_publish. The loop is the `for m in ms:` inside process_telemetry; it is wrapped,
+    # not rewritten, so MAX's own body carries through.
+    tree = astpatch.parse(src)
+    telemetry = astpatch.find_function(tree, "process_telemetry")
+    commit_loop = astpatch.find_stmt(
+        telemetry, lambda n: isinstance(n, ast.For) and astpatch.calls(n, "commit_fn"))
+    start, end = astpatch.lines_of(src, commit_loop)
+    body = "".join(src.splitlines(keepends=True)[start:end])
+    src = astpatch.replace_lines(src, start, end,
+        "                if _TEL_TIMING:  # PROTOTYPE\n"
+        "                    _t0 = time.perf_counter_ns()\n"
+        + astpatch.reindent(body, "    ")
+        + "                    _tel_record(time.perf_counter_ns() - _t0, len(ms))\n"
+        "                else:\n"
+        + astpatch.reindent(body, "    "))
     src += '''
 
 # ---- PROTOTYPE: telemetry-process commit timing -------------------------------------
@@ -485,8 +411,9 @@ def _tel_record(ns: int, n: int) -> None:
     _TEL_BATCHES.clear()
     _TEL_MEASUREMENTS.clear()
 '''
-    old = "    return process_telemetry(metrics_q, alive, commit_fn)\n"
-    assert src.count(old) == 1
+    tree = astpatch.parse(src)
+    worker = astpatch.find_stmt(
+        tree, lambda n: isinstance(n, ast.Return) and astpatch.calls(n, "process_telemetry"))
     new = '''    if os.environ.get("MAX_SERVE_RECORD_METRICS"):  # PROTOTYPE design 1
         import sys
 
@@ -513,9 +440,8 @@ def _tel_record(ns: int, n: int) -> None:
             daemon=True,
         ).start()
 
-    return process_telemetry(metrics_q, alive, commit_fn)
 '''
-    src = src.replace(old, new, 1)
+    src = astpatch.insert_before(src, worker, new)
     if "\nimport os\n" not in src:
         src = src.replace("\nimport threading\n", "\nimport os\nimport threading\n", 1)
     if "\nimport time\n" not in src:
@@ -525,26 +451,32 @@ def _tel_record(ns: int, n: int) -> None:
 
 
 def patch_model_worker() -> None:
+    """Flush buffered records when the scheduler idles, and on worker-loop exit.
+
+    Both spots are found structurally: the `while True:` scheduler loop inside `run`, and the
+    branch that tests SchedulerProgress.NO_PROGRESS inside it.
+    """
     src = pristine(WORKER, os.path.join(HERE, "model_worker.py.orig"))
-    old = """            count_no_progress = 0
-            while True:
-"""
-    assert src.count(old) == 1
-    src = src.replace(old, """            from max.serve.scheduler.utils import _rec_idle_flush, _rec_shutdown  # PROTOTYPE
+    tree = astpatch.parse(src)
+    run = astpatch.find_function(tree, "run", in_class="ModelWorker")
+    loop = astpatch.find_stmt(
+        run, lambda n: isinstance(n, ast.While) and isinstance(n.test, ast.Constant)
+        and n.test.value is True)
+    no_progress = astpatch.find_stmt(
+        loop, lambda n: astpatch.compares_to(n, "SchedulerProgress.NO_PROGRESS"))
+    src = astpatch.insert_at_body_start(
+        src, no_progress,
+        "                    _rec_idle_flush()  # PROTOTYPE: no-op unless records are buffered\n")
+    tree = astpatch.parse(src)
+    run = astpatch.find_function(tree, "run", in_class="ModelWorker")
+    loop = astpatch.find_stmt(
+        run, lambda n: isinstance(n, ast.While) and isinstance(n.test, ast.Constant)
+        and n.test.value is True)
+    src = astpatch.insert_before(src, loop, """            from max.serve.scheduler.utils import _rec_idle_flush, _rec_shutdown  # PROTOTYPE
 
             if os.environ.get("MAX_SERVE_RECORD_METRICS"):  # PROTOTYPE: flush / close on exit
                 exit_stack.callback(_rec_shutdown)
-            count_no_progress = 0
-            while True:
-""", 1)
-    old = """                if progress == SchedulerProgress.NO_PROGRESS:
-                    await sleep_with_backoff(count_no_progress)
-"""
-    assert src.count(old) == 1
-    src = src.replace(old, """                if progress == SchedulerProgress.NO_PROGRESS:
-                    _rec_idle_flush()  # PROTOTYPE: no-op unless records are buffered
-                    await sleep_with_backoff(count_no_progress)
-""", 1)
+""")
     compile(src, WORKER, "exec")
     open(WORKER, "w").write(src)
 
