@@ -7,12 +7,19 @@ hf/
 # redistributable here, so these stay local.
 *.orig
 
-# Generated: `dagr build` output, and the code generated from record_spec.py /
-# MAX's instrument table. Regenerate with the commands in the README.
-gen/
+# `dagr build` output. gen/mojo is committed — the Dagr CLI is not public yet, so a clone
+# cannot regenerate it, and nothing here compiles without it. gen/python is not: it carries
+# the Dagr schema DSL and layout engine, which are toolchain internals rather than output
+# for these schemas.
+gen/python/
 .dagr/
-metrics_record_gen.mojo
+
+# Generated from MAX's own instrument table by gen_prom_table.py. Not committed: it embeds
+# MAX's metric descriptions. Anyone reproducing this has MAX installed and can generate it.
 prom_table.mojo
+
+# Generated from record_spec.py by gen_record_code.py (no Dagr CLI needed).
+metrics_record_gen.mojo
 
 # Build output
 *.so

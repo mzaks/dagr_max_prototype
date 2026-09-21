@@ -48,6 +48,7 @@ API process ──measurements──┘         │
 | Path | What |
 | --- | --- |
 | `schema.py`, `record_spec.py` | Dagr schemas; the single source for the record's fields |
+| `gen/mojo/` | committed `dagr build` output: the generated sinks and Dagr's Mojo runtime |
 | `gen_record_code.py`, `gen_prom_table.py` | generate the Mojo conversion code and the instrument table (from MAX's own `SERVE_METRICS`) |
 | `metrics_log.mojo`, `measurement_log.mojo`, `pyconv.mojo`, `mmap_destination.mojo` | the Python extension: record/measurement writers, CPython fast paths, the mmap destination |
 | `astpatch.py` | find code in MAX by structure, so no MAX source is quoted here |
@@ -61,14 +62,18 @@ API process ──measurements──┘         │
 
 ## Reproducing
 
+`gen/mojo/` is committed because the Dagr CLI is not public yet — re-run `dagr build` only if
+you change `schema.py`. The reflective Python runtime (`gen/python/`) is not included, so the
+three SharedBuffer hand-off scripts (`check.py`, `bench.py`, `slot_writers.py`) do not run from
+a clone; their results are in `docs/measurements.md`.
+
 ```sh
 uv venv -p 3.12 .venv
 uv pip install -p .venv/bin/python --prerelease=allow "max[serve]==26.6.0.dev2026082707" \
     "mojo==1.1.0.dev2026082707" msgspec httpx pillow \
     --extra-index-url https://whl.modular.com/nightly/simple/ --index-strategy unsafe-best-match
 
-dagr build                                   # needs Dagr >= 0fa5154
-.venv/bin/python gen_record_code.py
+.venv/bin/python gen_record_code.py           # record conversion code from record_spec.py
 .venv/bin/mojo build --emit shared-lib -I gen/mojo -I . metrics_log.mojo -o metrics_log.so
 PATCH_FAST_VALUES=1 PATCH_KV_SNAPSHOT=1 .venv/bin/python max_patch.py
 
