@@ -1,0 +1,10 @@
+label=meas_base_1 stage=1 mode=base
+Traceback (most recent call last):
+17:15:17.013 INFO: PROTOTYPE stages (us) after 200 steps: create med 33.0 p90 38.2 mean 33.4 max 99.5 | publish med 52.0 p90 60.4 mean 53.8 max 241.6 | record_append med 0.0 p90 0.0 mean 0.0 max 0.0 | log_line med 0.6 p90 130.8 mean 43871.9 max 4790937.3 | flushes append 0 idle 0 idle_mean 0.0
+17:15:30.655 INFO: PROTOTYPE stages (us) after 400 steps: create med 27.1 p90 30.9 mean 27.7 max 49.0 | publish med 44.0 p90 51.5 mean 44.9 max 101.3 | record_append med 0.0 p90 0.0 mean 0.0 max 0.0 | log_line med 0.5 p90 0.6 mean 3.7 max 300.3 | flushes append 0 idle 0 idle_mean 0.0
+17:15:43.370 INFO: PROTOTYPE stages (us) after 600 steps: create med 26.9 p90 29.9 mean 27.5 max 152.5 | publish med 42.6 p90 49.4 mean 44.4 max 142.2 | record_append med 0.0 p90 0.0 mean 0.0 max 0.0 | log_line med 0.4 p90 0.6 mean 4.1 max 421.5 | flushes append 0 idle 0 idle_mean 0.0
+label=meas_record_1 stage=1 mode=record
+17:17:51.652 INFO: PROTOTYPE stages (us) after 200 steps: create med 17.8 p90 20.9 mean 18.6 max 73.2 | publish med 0.1 p90 0.1 mean 0.1 max 0.2 | record_append med 22.2 p90 29.2 mean 25.5 max 418.6 | log_line med 0.8 p90 158.1 mean 22597.4 max 4511320.6 | flushes append 0 idle 0 idle_mean 0.0
+17:18:04.933 INFO: PROTOTYPE stages (us) after 400 steps: create med 14.7 p90 16.6 mean 15.2 max 45.0 | publish med 0.1 p90 0.1 mean 0.1 max 0.2 | record_append med 15.2 p90 18.5 mean 16.4 max 44.5 | log_line med 0.6 p90 0.8 mean 3.1 max 146.8 | flushes append 0 idle 0 idle_mean 0.0
+17:18:17.836 INFO: PROTOTYPE stages (us) after 600 steps: create med 14.3 p90 16.5 mean 14.4 max 21.7 | publish med 0.1 p90 0.1 mean 0.1 max 0.2 | record_append med 14.7 p90 16.5 mean 15.0 max 28.2 | log_line med 0.5 p90 0.7 mean 2.9 max 122.3 | flushes append 0 idle 0 idle_mean 0.0
+done

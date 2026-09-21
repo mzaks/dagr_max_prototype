@@ -1,0 +1,4 @@
+label=record_cvtiming_1 stage=1 mode=record
+18:22:23.979 INFO: PROTOTYPE stages (us) after 200 steps: create med 74.2 p90 92.6 mean 76.1 max 398.1 | publish med 0.2 p90 0.2 mean 0.2 max 0.4 | record_append med 23.6 p90 65.2 mean 48.7 max 3296.0 | log_line med 0.5 p90 68.5 mean 14.9 max 184.6 | flushes append 52 idle 0 idle_mean 0.0
+18:22:37.221 INFO: PROTOTYPE stages (us) after 400 steps: create med 34.5 p90 41.8 mean 37.7 max 347.8 | publish med 0.2 p90 0.2 mean 0.2 max 0.3 | record_append med 15.8 p90 26.5 mean 19.2 max 127.6 | log_line med 0.4 p90 0.5 mean 3.1 max 155.3 | flushes append 64 idle 1 idle_mean 28.0
+18:22:50.454 INFO: PROTOTYPE stages (us) after 600 steps: create med 32.4 p90 37.0 mean 34.5 max 302.2 | publish med 0.2 p90 0.2 mean 0.2 max 0.3 | record_append med 14.6 p90 19.4 mean 17.1 max 56.9 | log_line med 0.3 p90 0.5 mean 3.0 max 143.9 | flushes append 77 idle 1 idle_mean 28.0

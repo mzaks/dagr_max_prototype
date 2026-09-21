@@ -1,0 +1,2409 @@
+{
+  "library": {
+    "graphs": {},
+    "ir_version": 1,
+    "name": "max_batch_log",
+    "schemas": [
+      {
+        "kind": "sink",
+        "name": "MaxBatchLog"
+      },
+      {
+        "kind": "sharedbuffer",
+        "name": "BatchStepSlot"
+      },
+      {
+        "kind": "sink",
+        "name": "MaxBatchMetrics"
+      },
+      {
+        "kind": "sink",
+        "name": "MaxMeasurements"
+      }
+    ],
+    "shared_buffers": {
+      "BatchStepSlot": {
+        "concurrency": "none",
+        "layout": {
+          "byte_size": 136,
+          "concurrency": "none",
+          "nodes": {
+            "BatchStepRec": {
+              "align": 8,
+              "aux_pool_bytes": 0,
+              "aux_pool_offset": 132,
+              "bit_pool_bytes": 3,
+              "bit_pool_offset": 132,
+              "fields": {
+                "batch_size": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 96,
+                    "size": 4
+                  }
+                },
+                "batch_type": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "bit": 0,
+                    "bits": 1,
+                    "byte": 134,
+                    "kind": "bit"
+                  }
+                },
+                "cache_hit_tokens": {
+                  "meta": null,
+                  "present": {
+                    "bit": 2,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 116,
+                    "size": 4
+                  }
+                },
+                "cache_miss_tokens": {
+                  "meta": null,
+                  "present": {
+                    "bit": 3,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 120,
+                    "size": 4
+                  }
+                },
+                "completed": {
+                  "meta": null,
+                  "present": {
+                    "bit": 7,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 64,
+                    "size": 32
+                  }
+                },
+                "context_tokens": {
+                  "meta": null,
+                  "present": {
+                    "bit": 3,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 8,
+                    "size": 8
+                  }
+                },
+                "creation_time_s": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 16,
+                    "size": 8
+                  }
+                },
+                "draft_tokens_accepted": {
+                  "meta": null,
+                  "present": {
+                    "bit": 5,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 128,
+                    "size": 4
+                  }
+                },
+                "draft_tokens_generated": {
+                  "meta": null,
+                  "present": {
+                    "bit": 4,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 124,
+                    "size": 4
+                  }
+                },
+                "execution_time_s": {
+                  "meta": null,
+                  "present": {
+                    "bit": 4,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 24,
+                    "size": 8
+                  }
+                },
+                "generation_throughput": {
+                  "meta": null,
+                  "present": {
+                    "bit": 6,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 40,
+                    "size": 8
+                  }
+                },
+                "input_tokens": {
+                  "meta": null,
+                  "present": {
+                    "bit": 2,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 108,
+                    "size": 4
+                  }
+                },
+                "overlap_active": {
+                  "meta": null,
+                  "present": {
+                    "bit": 6,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "bit": 1,
+                    "bits": 1,
+                    "byte": 134,
+                    "kind": "bit"
+                  }
+                },
+                "pending_reqs": {
+                  "meta": null,
+                  "present": {
+                    "bit": 1,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 104,
+                    "size": 4
+                  }
+                },
+                "preemptions_total": {
+                  "meta": null,
+                  "present": {
+                    "bit": 7,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 48,
+                    "size": 8
+                  }
+                },
+                "prompt_throughput": {
+                  "meta": null,
+                  "present": {
+                    "bit": 5,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 32,
+                    "size": 8
+                  }
+                },
+                "terminated_reqs": {
+                  "meta": null,
+                  "present": {
+                    "bit": 0,
+                    "byte": 132
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 100,
+                    "size": 4
+                  }
+                },
+                "total_kv_blocks": {
+                  "meta": null,
+                  "present": {
+                    "bit": 1,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 112,
+                    "size": 4
+                  }
+                },
+                "ts_ns": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 0,
+                    "size": 8
+                  }
+                },
+                "used_kv_pct": {
+                  "meta": null,
+                  "present": {
+                    "bit": 0,
+                    "byte": 133
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 56,
+                    "size": 8
+                  }
+                }
+              },
+              "reserved": null,
+              "size": 136
+            },
+            "CompletedRec": {
+              "align": 8,
+              "aux_pool_bytes": 0,
+              "aux_pool_offset": 24,
+              "bit_pool_bytes": 1,
+              "bit_pool_offset": 24,
+              "fields": {
+                "batch_size": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 16,
+                    "size": 4
+                  }
+                },
+                "batch_type": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "bit": 2,
+                    "bits": 1,
+                    "byte": 24,
+                    "kind": "bit"
+                  }
+                },
+                "context_tokens": {
+                  "meta": null,
+                  "present": {
+                    "bit": 1,
+                    "byte": 24
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 0,
+                    "size": 8
+                  }
+                },
+                "execution_time_s": {
+                  "meta": null,
+                  "present": null,
+                  "tag": null,
+                  "value": {
+                    "align": 8,
+                    "kind": "wide",
+                    "offset": 8,
+                    "size": 8
+                  }
+                },
+                "input_tokens": {
+                  "meta": null,
+                  "present": {
+                    "bit": 0,
+                    "byte": 24
+                  },
+                  "tag": null,
+                  "value": {
+                    "align": 4,
+                    "kind": "wide",
+                    "offset": 20,
+                    "size": 4
+                  }
+                }
+              },
+              "reserved": null,
+              "size": 32
+            }
+          },
+          "region_align": 8,
+          "root": "BatchStepRec",
+          "root_offset": 0,
+          "unions": {}
+        },
+        "name": "BatchStepSlot",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts_ns",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_type",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "SlotBatchType"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "terminated_reqs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "pending_reqs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "input_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "context_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "creation_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "execution_time_s",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "prompt_throughput",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "generation_throughput",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "preemptions_total",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "used_kv_pct",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "total_kv_blocks",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_hit_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_miss_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_generated",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_accepted",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "overlap_active",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "completed",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "CompletedRec"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "BatchStepRec",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "as_bitset": false,
+            "capacity": 2,
+            "cases": {
+              "0": "CE",
+              "1": "TG"
+            },
+            "kind": "enum",
+            "name": "SlotBatchType"
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_type",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "SlotBatchType"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "input_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "context_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "execution_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "CompletedRec",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "ring_capacity": null,
+        "root_type": {
+          "kind": "ref",
+          "ref": "BatchStepRec"
+        }
+      }
+    },
+    "sinks": {
+      "MaxBatchLog": {
+        "header": {
+          "fields": [
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "producer",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "utf8"
+              }
+            },
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "model",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "utf8"
+              }
+            },
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "max_batch_size",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "u32"
+              }
+            }
+          ],
+          "frozen": false,
+          "kind": "node",
+          "name": "BatchLogHeader",
+          "packed": false,
+          "prefabs": {}
+        },
+        "imports": [],
+        "name": "MaxBatchLog",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts_ns",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_type",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "BatchType"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "terminated_reqs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "pending_reqs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "input_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "context_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "creation_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "execution_time_s",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "prompt_throughput",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "generation_throughput",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "preemptions_total",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "used_kv_pct",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "total_kv_blocks",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_hit_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_miss_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_generated",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_accepted",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "overlap_active",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "completed",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "CompletedBatch"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "BatchStep",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "as_bitset": false,
+            "capacity": 2,
+            "cases": {
+              "0": "CE",
+              "1": "TG"
+            },
+            "kind": "enum",
+            "name": "BatchType"
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_type",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "BatchType"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "input_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "context_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "execution_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "CompletedBatch",
+            "packed": false,
+            "prefabs": {}
+          }
+        ]
+      },
+      "MaxBatchMetrics": {
+        "header": {
+          "fields": [
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "producer",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "utf8"
+              }
+            },
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "model",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "utf8"
+              }
+            }
+          ],
+          "frozen": false,
+          "kind": "node",
+          "name": "MetricsLogHeader",
+          "packed": false,
+          "prefabs": {}
+        },
+        "imports": [],
+        "name": "MaxBatchMetrics",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts_ns",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_type",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "MetricsBatchType"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "max_batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "terminated_reqs",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_pending_reqs",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_input_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "max_batch_input_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_context_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "max_batch_total_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_creation_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_execution_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "prompt_throughput",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "generation_throughput",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "total_preemption_count",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "used_kv_pct",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "total_kv_blocks",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_hit_rate",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_hit_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_miss_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "device_blocks_served",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "used_host_kv_pct",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "total_host_kv_blocks",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "h2d_blocks_copied",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "d2h_blocks_copied",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "disk_blocks_read",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "disk_blocks_written",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "inflight_disk_ops",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "used_disk_kv_pct",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "total_disk_kv_blocks",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_generated",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_accepted",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "avg_acceptance_length",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "max_acceptance_length",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "acceptance_rate_per_position",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "nixl_read_latency_avg_ms",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "nixl_write_latency_avg_ms",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "rpc_acquire_latency_avg_ms",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "rpc_read_latency_avg_ms",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "nixl_read_gib_per_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "nixl_write_gib_per_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dkv_connected_clients",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dkv_total_clients",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dkv_reconnect_attempts",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dkv_read_blocks",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cache_hit_external_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "overlap_active",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "completed",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "CompletedRec"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dp_active_token_occupancy_pct",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dp_context_token_occupancy_pct",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dp_active_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "dp_step_capacity_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cross_replica_blocks_copied",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "cross_replica_bytes_copied",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "per_request_prefix_coverage",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_new_admissions",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "published_in_worker",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "vision_metrics",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "VisionRec"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "video_metrics",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "VideoRec"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "BatchMetricsRec",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "as_bitset": false,
+            "capacity": 2,
+            "cases": {
+              "0": "CE",
+              "1": "TG"
+            },
+            "kind": "enum",
+            "name": "MetricsBatchType"
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_type",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "MetricsBatchType"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "batch_size",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_input_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_context_tokens",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "execution_time_s",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_output_tokens",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_generated",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "draft_tokens_accepted",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "avg_acceptance_length",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "max_acceptance_length",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "acceptance_rate_per_position",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "CompletedRec",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_images_total",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_images_encoded",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_images_cached",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_patches_encoded",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_tokens_encoded",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "VisionRec",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_clips_total",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_clips_encoded",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_clips_cached",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "frame_counts",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "u64"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "num_tokens_encoded",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "encoding_time_ms",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "VideoRec",
+            "packed": false,
+            "prefabs": {}
+          }
+        ]
+      },
+      "MaxMeasurements": {
+        "header": {
+          "fields": [
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "producer",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "utf8"
+              }
+            },
+            {
+              "alignment": null,
+              "capacity": null,
+              "default": null,
+              "index": null,
+              "name": "pid",
+              "options": 1,
+              "timestamp": null,
+              "type": {
+                "kind": "u64"
+              }
+            }
+          ],
+          "frozen": false,
+          "kind": "node",
+          "name": "MeasurementLogHeader",
+          "packed": false,
+          "prefabs": {}
+        },
+        "imports": [],
+        "name": "MaxMeasurements",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts_ns",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "name_id",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "attrs_id",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "value",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "MeasurementRec",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "id",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "name",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "NameRec",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "id",
+                "options": 1,
+                "timestamp": null,
+                "type": {
+                  "kind": "u32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "kv",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "AttrSetRec",
+            "packed": false,
+            "prefabs": {}
+          }
+        ]
+      }
+    },
+    "wire_format_version": 1
+  },
+  "library_hash": "sha256:cd71776a029cc23cf1994e299e1c614518bb0ed5c6c87441d8139debd029afe4",
+  "outputs": {
+    "gen/mojo/BatchStepSlotSharedBuffer.mojo": "sha256:c5c6989e3b04f361d9b955a0277eaa332f1fe652ba7ae390863ec492290e5c86",
+    "gen/mojo/MaxBatchLogSink.mojo": "sha256:d31a7f9f9d044d086795c92087c74a47d72e0b51f8e3a2821d668ce3a1d1c607",
+    "gen/mojo/MaxBatchMetricsSink.mojo": "sha256:085413e37f1c85b3dfa96781b1f22ea243981e5d923d7bddb841ee296ce963e3",
+    "gen/mojo/MaxMeasurementsSink.mojo": "sha256:b16e0e7ff263e55375b44963066c8ae21ae126f1050e773a5681c2f7e030fc46",
+    "gen/mojo/dagr_reader.mojo": "sha256:6dd8318b251f13c65f9eb749c388ffbdcf76fcf7d0f81474a52b1f4a9a117de1",
+    "gen/mojo/dagr_writer.mojo": "sha256:5b1617f9facba2bb60f29a824325ccc71c7c30648d0a3c0253e937ee27a42713",
+    "gen/python/batch_step_slot_sb.py": "sha256:7bab121797fab988cb28999d2725764f22cd3c62b372f2fc36949d3ca1f57dcf",
+    "gen/python/dagr_codegen_shared.py": "sha256:4924efce36ba9b0cba7f5f3ca103799156dd24959215719fff55b84c222f88e4",
+    "gen/python/dagr_config.py": "sha256:97b77f3624fdf50a02da5851f64a4db046e8a62409dfa64d19c46708159f798e",
+    "gen/python/dagr_dsl.py": "sha256:b6368e2c42bee0e1108133173b6e99a869c480e7d833cd5362aa370cc67a0cfc",
+    "gen/python/dagr_layout.py": "sha256:7b337d84f5c5a1278c86bf7da6ced1f473a080b1e2a4227a976575c3082d77d7",
+    "gen/python/dagr_py/__init__.py": "sha256:532e808d58d2c2cf33718d967a10cb2a6cf89cd695300a841080ddc01b9e0eb8",
+    "gen/python/dagr_py/dagr_defaults.py": "sha256:22553eebb2632222c2053bf30c6310460dd1077362f8dc3e57ba72846cb4f299",
+    "gen/python/dagr_py/dagr_model.py": "sha256:b222cde7de4782490e9e45c28dec08d4e15713c86435b01a744948914b3e9407",
+    "gen/python/dagr_py/dagr_reader.py": "sha256:a5227d9a8b1ba003261d9f70360fd0d3c0406d4c256c1fb6d8f915bc03f22dcb",
+    "gen/python/dagr_py/dagr_restore.py": "sha256:083c7fd115bf2e504b0af3aea2e238b5ab4fc3e745fab904eab7f67d40f29bd6",
+    "gen/python/dagr_py/dagr_sb_concurrency.py": "sha256:6e95b985efad4da75ace0f6bfabf244bd36555760adc31b09fdbc303954b9305",
+    "gen/python/dagr_py/dagr_sb_reader.py": "sha256:c28e5b0989f524890dad424425a0b0e7a36c152d21aeacdcbb8eea8f5f8e484d",
+    "gen/python/dagr_py/dagr_serialize.py": "sha256:11c75e9b7c4690d51dcd75e56064c5210e4c576679bfc2c6f883024cf671ebdd",
+    "gen/python/dagr_py/dagr_sink.py": "sha256:b3065a3c44efc22247de3420b317f3f978845bfd92d028ac57527573c6e5f1c1",
+    "gen/python/dagr_py/dagr_typed.py": "sha256:632f0bdaf2dce51d81b7e897fc983ee68f44a917362ac3c238a3ba5b56530d50",
+    "gen/python/dagr_py/dagr_writer.py": "sha256:79d0d13988aa3fe84ebddd22fede889c2852b3f8e3574745199f324530cf928f",
+    "gen/python/dagr_sb_writer.py": "sha256:93ffa38e26728b62ba19f21ad2e5d88b02adac46744c455bf2e07c7f6e24087c",
+    "gen/python/dagr_schema.py": "sha256:4956895f6fe871c40e79cf2cdf8a8816b34e071362d4f5edf1062ff54ed14ec1",
+    "gen/python/max_batch_log_sink.py": "sha256:e0ff6641356cc6a4297771b37acb3bc291c7700c27a861fa3787a55633cb982b",
+    "gen/python/max_batch_metrics_sink.py": "sha256:dba57790ccbb5d359aa73ab8decbaa3153ae43ed1dbbb5c8ed279e2b50cc2b6c",
+    "gen/python/max_measurements_sink.py": "sha256:2e050336512dc7a8aa34fdae3fecbf9d203f8724b9ebc57fd3d82bebc8d0a41c"
+  },
+  "provenance": {
+    "command": "dagr build",
+    "generated_at": "2026-09-20T14:59:40.111021+00:00",
+    "host": null,
+    "tool_version": "dagr 2026.9.0"
+  },
+  "receipt_version": 1,
+  "targets": [
+    {
+      "exclude": [],
+      "features": [],
+      "lang": "mojo",
+      "layout": null,
+      "out": "gen/mojo",
+      "package": null
+    },
+    {
+      "exclude": [],
+      "features": [],
+      "lang": "python",
+      "layout": null,
+      "out": "gen/python",
+      "package": null
+    }
+  ]
+}

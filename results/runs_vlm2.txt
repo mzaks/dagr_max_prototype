@@ -1,0 +1,11 @@
+label=base_vlm_1 stage=1 mode=base
+16:18:32.362 INFO: PROTOTYPE stages (us) after 200 steps: create med 30.8 p90 35.6 mean 31.6 max 57.1 | publish med 29.9 p90 35.7 mean 31.0 max 57.6 | record_append med 0.0 p90 0.0 mean 0.0 max 0.0 | log_line med 0.7 p90 0.8 mean 5.2 max 176.9 | flushes append 0 idle 0 idle_mean 0.0
+16:18:47.109 INFO: PROTOTYPE stages (us) after 400 steps: create med 29.8 p90 33.7 mean 30.4 max 55.0 | publish med 29.2 p90 33.5 mean 29.8 max 47.6 | record_append med 0.0 p90 0.0 mean 0.0 max 0.0 | log_line med 0.6 p90 0.8 mean 4.0 max 164.1 | flushes append 0 idle 0 idle_mean 0.0
+24/24 streams ok in 34.5s (6 distinct images, 400 tokens each)
+  TTFT median 5.52s, total median 34.41s
+label=record_vlm_1 stage=1 mode=record
+16:19:33.940 INFO: PROTOTYPE stages (us) after 200 steps: create med 17.1 p90 19.7 mean 17.4 max 29.7 | publish med 0.1 p90 0.1 mean 0.1 max 0.3 | record_append med 13.5 p90 15.2 mean 32.9 max 3852.6 | log_line med 0.6 p90 0.8 mean 4.1 max 136.4 | flushes append 0 idle 0 idle_mean 0.0
+16:19:48.605 INFO: PROTOTYPE stages (us) after 400 steps: create med 16.7 p90 18.5 mean 16.8 max 22.3 | publish med 0.1 p90 0.1 mean 0.1 max 0.2 | record_append med 12.9 p90 14.3 mean 13.0 max 25.5 | log_line med 0.5 p90 0.7 mean 3.6 max 133.0 | flushes append 0 idle 0 idle_mean 0.0
+24/24 streams ok in 34.2s (6 distinct images, 400 tokens each)
+  TTFT median 5.31s, total median 34.15s
+done

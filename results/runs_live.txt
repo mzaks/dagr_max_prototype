@@ -1,0 +1,1 @@
+run_server.sh: line 52: 72408 Terminated: 15          .venv/bin/python -I load_gpu.py 512 200 8 20 > "runs/$label.load512.txt" 2>&1

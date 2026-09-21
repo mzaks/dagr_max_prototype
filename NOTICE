@@ -1,0 +1,12 @@
+This project modifies and instruments MAX, which is licensed by Modular Inc under the
+Modular MAX Community License.
+
+    "MAX is licensed by Modular Inc under the Modular MAX Community License and has been
+    modified by the authors of this repository. Copyright Modular Inc. IN NO EVENT SHALL
+    MODULAR INC BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH USE OF MAX
+    OR ANY DERIVATIVE WORKS THEREOF."
+
+No MAX source is redistributed here. The patch scripts rewrite files inside a locally
+installed MAX (pip wheel) from pristine backups they make themselves; those backups
+(*.orig) are git-ignored. See "Licensing" in README.md before publishing this repository.

@@ -1,0 +1,27 @@
+# Environment and models (multi-GB, fetched by the setup steps in the README)
+.venv/
+hf/
+
+# Pristine copies of MAX's own source, made by max_patch.py before patching.
+# MAX is licensed under the Modular MAX Community License; its source is not
+# redistributable here, so these stay local.
+*.orig
+
+# Generated: `dagr build` output, and the code generated from record_spec.py /
+# MAX's instrument table. Regenerate with the commands in the README.
+gen/
+.dagr/
+metrics_record_gen.mojo
+prom_table.mojo
+
+# Build output
+*.so
+prom_agg
+otlp_push
+telemetry_server
+__pycache__/
+*.pyc
+
+# Run artifacts: server logs, metric scrapes, record streams (50 MB+ per run).
+# Curated numbers live in results/ and in the write-up.
+runs/

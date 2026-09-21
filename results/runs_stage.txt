@@ -1,0 +1,9 @@
+label=stage_nolog_1 stage=1 dagr=0
+17:07:40.156 INFO: PROTOTYPE stages (us) after 200 steps: create med 64.0 p90 87.5 mean 68.9 max 107.0 | publish med 42.4 p90 48.6 mean 43.4 max 132.8 | dagr_append med 0.5 p90 0.6 mean 0.5 max 7.2 | log_line med 0.7 p90 158.2 mean 23170.3 max 4628218.1
+17:07:54.065 INFO: PROTOTYPE stages (us) after 400 steps: create med 36.1 p90 42.3 mean 37.7 max 106.4 | publish med 34.1 p90 41.4 mean 35.0 max 85.7 | dagr_append med 0.5 p90 0.5 mean 0.4 max 0.7 | log_line med 0.6 p90 0.8 mean 4.3 max 170.4
+17:08:06.612 INFO: PROTOTYPE stages (us) after 600 steps: create med 35.1 p90 39.1 mean 35.7 max 89.7 | publish med 32.0 p90 36.8 mean 32.8 max 65.3 | dagr_append med 0.4 p90 0.5 mean 0.4 max 0.8 | log_line med 0.5 p90 0.8 mean 3.3 max 145.8
+label=stage_dagr_1 stage=1 dagr=1
+17:10:31.332 INFO: PROTOTYPE stages (us) after 200 steps: create med 65.6 p90 90.8 mean 70.9 max 154.5 | publish med 41.4 p90 46.2 mean 42.8 max 159.0 | dagr_append med 13.8 p90 18.5 mean 33.2 max 3774.3 | log_line med 0.7 p90 159.1 mean 24.1 max 280.7
+17:10:45.516 INFO: PROTOTYPE stages (us) after 400 steps: create med 36.4 p90 44.4 mean 40.3 max 353.1 | publish med 32.8 p90 41.1 mean 34.3 max 70.3 | dagr_append med 10.1 p90 12.3 mean 15.0 max 859.0 | log_line med 0.6 p90 0.8 mean 5.0 max 223.8
+17:10:58.524 INFO: PROTOTYPE stages (us) after 600 steps: create med 36.1 p90 41.1 mean 36.6 max 60.8 | publish med 31.2 p90 37.9 mean 32.5 max 65.5 | dagr_append med 9.9 p90 11.7 mean 11.6 max 285.0 | log_line med 0.5 p90 0.7 mean 4.8 max 425.1
+done
