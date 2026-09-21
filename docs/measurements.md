@@ -455,8 +455,12 @@ trip, and a GPU lifetime matching the baseline series (TG 602, ITL 114,656, inpu
 115,200) at unchanged cost (~15.5 µs build values, ~15.5 µs append).
 
 ### msync: what durability against an OS crash costs
-`flush()` now msyncs the log and then the sidecar (that order: the committed length must not
-reach disk before the bytes it points at), on by default, `DAGR_LOG_MSYNC=0` to disable.
+`flush()` msyncs the log and then the sidecar (that order: the committed length must not reach
+disk before the bytes it points at). Off by default — the page cache already survives a process
+crash — and enabled with `DAGR_LOG_MSYNC=1`. In mmap mode the record path's flush interval
+defaults to 1 s rather than 0.05 s, because a flush there is an msync rather than a buffered
+write; the measurement client msyncs on `MAX_SERVE_MEASUREMENT_MSYNC_S` (1 s) rather than on
+every batch.
 `close()` flushes before trimming. In mmap mode the record path now honours its flush interval
 instead of returning early, so what an OS crash can lose is bounded by that window.
 
@@ -477,4 +481,8 @@ to 12.5–12.8 µs. At a 1 s interval that effect disappears (encode back to 5.1
 
 So the interval is the whole trade: at 0.05 s nearly every step pays msync, at 1 s roughly one
 step in six does (~14 µs per step amortised at batch 32) and the window at risk is a second.
-Published metrics were identical to baseline in both runs.
+Published metrics were identical to baseline in every run.
+
+With the shipped defaults (msync off, 1 s interval in mmap mode) a flush is 0.50 µs — the
+no-op plus its call — and the append is back where it was: encode 5.0–5.3 µs, append median
+16.9–18.0 µs, 95 flushes per 600 steps (`defaults_1`).

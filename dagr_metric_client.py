@@ -32,6 +32,11 @@ class DagrMetricClient(MetricClient):
         self.module_dir = module_dir or os.path.dirname(os.path.abspath(__file__))
         self.batch_size = int(os.environ.get("MAX_SERVE_MEASUREMENT_BATCH", "64"))
         self.max_delay_s = float(os.environ.get("MAX_SERVE_MEASUREMENT_MAX_DELAY_S", "0.05"))
+        # Writing rows into the mapping is not the same as msyncing it: batching keeps the
+        # telemetry side within 50 ms, while an msync (only when DAGR_LOG_MSYNC=1) is worth
+        # far less often.
+        self.msync_s = float(os.environ.get("MAX_SERVE_MEASUREMENT_MSYNC_S", "1.0"))
+        self._last_msync = time.monotonic()
         self._log = None
         self._rows: list[tuple] = []
         self._names: dict[str, int] = {}
@@ -137,8 +142,11 @@ class DagrMetricClient(MetricClient):
         rows, self._rows = self._rows, []
         log = self._open()
         log.append_rows(rows)
-        log.flush()          # msync: bounds what an OS crash can lose to one flush interval
-        self._last_flush = time.monotonic()
+        now = time.monotonic()
+        if now - self._last_msync >= self.msync_s:
+            log.flush()      # a no-op unless DAGR_LOG_MSYNC=1; then an msync
+            self._last_msync = now
+        self._last_flush = now
 
     def cross_process_factory(self, settings):
         # Each process writes its own file; the child builds a fresh client.

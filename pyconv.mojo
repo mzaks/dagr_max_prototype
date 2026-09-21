@@ -222,8 +222,9 @@ def mono_ns() -> UInt64:
 
 
 def _msync_enabled() -> Bool:
-    """DAGR_LOG_MSYNC=0 turns msync off: flushes become no-ops and the page cache is the
-    durability boundary. On by default — msync costs ~34 us per flush here."""
+    """DAGR_LOG_MSYNC=1 makes flush() msync, so the log survives an OS crash and not only a
+    process crash. Off by default: the page cache already survives a process crash, and msync
+    costs 83-115 us per flush in a live worker (plus re-faulting the pages it cleans)."""
     from std.os import getenv
 
-    return String(getenv("DAGR_LOG_MSYNC")) != "0"
+    return String(getenv("DAGR_LOG_MSYNC")) == "1"

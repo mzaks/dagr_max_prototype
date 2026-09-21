@@ -160,8 +160,12 @@ def patch_utils() -> None:
 _REC_PATH = os.environ.get("MAX_SERVE_RECORD_METRICS")
 _REC_LOG = None
 _REC_LAST_FLUSH = 0.0
-_REC_FLUSH_S = float(os.environ.get("MAX_SERVE_RECORD_METRICS_FLUSH_S", "0.05"))
 _REC_MMAP = os.environ.get("MAX_SERVE_RECORD_METRICS_MMAP") == "1"
+# A flush means a write syscall for the buffered destination and an msync for the mapped one,
+# so the sensible interval differs: 50 ms of buffered records is small, 50 ms of msync is not.
+_REC_FLUSH_S = float(
+    os.environ.get("MAX_SERVE_RECORD_METRICS_FLUSH_S", "1.0" if _REC_MMAP else "0.05")
+)
 _REC_PENDING = False
 _REC_FLUSH_COUNTS = [0, 0, 0]  # append-triggered flushes, idle flushes, idle flush ns
 

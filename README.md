@@ -91,6 +91,37 @@ cd ../flare_check && pixi run mojo build -I . -I ../dagr_max_prototype/gen/mojo 
     ../dagr_max_prototype/telemetry_server.mojo -o ../dagr_max_prototype/telemetry_server
 ```
 
+## Durability
+
+Records are written into a memory mapping, so they are in the OS page cache the moment `write`
+returns. That gives two levels:
+
+| Level | Survives | Cost | How |
+| --- | --- | --- | --- |
+| Default | the producing process crashing | none | nothing to set |
+| msync | the machine losing power | 83–115 µs per flush, live | `DAGR_LOG_MSYNC=1` |
+
+A flush is a no-op by default and an `msync` with `DAGR_LOG_MSYNC=1`, which pushes the log and
+then its committed-length sidecar to disk — in that order, so the length never points past what
+is durable. What an OS crash can lose is then bounded by the flush interval:
+
+```sh
+DAGR_LOG_MSYNC=1 \
+MAX_SERVE_RECORD_METRICS_FLUSH_S=1.0 \       # step records; default 1 s in mmap mode
+MAX_SERVE_MEASUREMENT_MSYNC_S=1.0 \          # measurement streams; default 1 s
+  sh run_server.sh myrun 1 record
+```
+
+Keep those intervals around a second. msync is not only its own cost: it re-arms write
+protection on the pages it cleans, so the next stores fault again — flushing on every step took
+the encode stage from ~4.7 µs to ~12.6 µs, and the whole append from 15.3 µs to 113.6 µs. At a
+second, roughly one step in six flushes and the append median is 17.3 µs. The numbers are in
+`docs/measurements.md`.
+
+Two intervals are unrelated to durability and stay short: `MAX_SERVE_MEASUREMENT_MAX_DELAY_S`
+(50 ms) bounds how long a measurement waits in the producer's buffer before it is written into
+the mapping, and the telemetry reader polls every 20 ms.
+
 ## Checks
 
 | Command | Checks |
