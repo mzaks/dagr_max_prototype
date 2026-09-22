@@ -1,8 +1,8 @@
-# Dagr serializer runtime (plan 26 Phase 4) — a faithful port of the TS `Builder`
-# (RethinkingDagrTS/src/dagr_writer.ts), itself a port of Swift's DataArenaBuilder.
+# Dagr serializer runtime (plan 28 Phase 4) — a faithful port of the TS `Builder`
+# (targets/typescript/src/dagr_writer.ts), itself a port of Swift's DataArenaBuilder.
 #
 # A BACKWARD-growing builder over a SINGLE contiguous buffer (the Rust `DagrBuilder`
-# model — see `30 Performance Optimization Notes.md` §1.11): the wire lives in the
+# model — see `spec/32-performance-optimization-notes.md` §1.11): the wire lives in the
 # tail slice `_buf[_cap - cursor .. _cap]` and every store PREPENDS its bytes at the
 # head (`_buf[_cap - cursor - n ..]`), decrementing the head and growing `cursor` by
 # `n`. Writing in place (no per-store `List` allocation) is byte-identical to the old
@@ -181,7 +181,7 @@ struct _VtKey[VT_MAX: Int](Copyable, Movable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.h)
+        hasher.update(self.h.as_bytes())
 
 
 struct Builder[VT_MAX: Int = 32](Movable):
@@ -1204,7 +1204,7 @@ struct Builder[VT_MAX: Int = 32](Movable):
                src=self._buf.unsafe_ptr().unsafe_offset((len(self._buf)) - self.cursor), count=self.cursor)
 
 
-# ── DataSink write destinations ("10 Data Sink.md" §5) ─────────────────────────────
+# ── DataSink write destinations ("spec/11-data-sink.md" §5) ─────────────────────────────
 # The seam a generated `{Sink}StreamWriter[D]` writes through: each record is built in
 # the writer's scratch buffer and handed to `write` in ONE call (all-or-nothing from the
 # writer's view), so a destination never sees a partial record. The Mojo mirror of the

@@ -32,7 +32,7 @@ def _open_rdwr(path: String) raises -> Int32:
     var f = open(path, "w")
     f.close()
     var p = path.copy()
-    var fd = external_call["openat", Int32](_AT_FDCWD, p.as_c_string_slice().ptr(), _O_RDWR)
+    var fd = external_call["openat", Int32](_AT_FDCWD, p.as_c_string_span().ptr(), _O_RDWR)
     if fd < 0:
         raise Error("open failed: ", path)
     return fd
@@ -75,7 +75,7 @@ struct MmapFileDestination(SinkDestination):
 
     @always_inline
     def _publish_length(mut self):
-        self.len_map.unsafe_ptr().bitcast[UInt64]()[] = UInt64(self.committed)
+        self.len_map.unsafe_ptr().unsafe_bitcast[UInt64]()[] = UInt64(self.committed)
 
     def _grow(mut self, need: Int) raises:
         var new_size = self.size

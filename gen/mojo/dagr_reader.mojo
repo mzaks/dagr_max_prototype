@@ -1,8 +1,8 @@
 # Dagr lazy-read runtime primitives (Mojo) — Phase 0 spike.
 #
 # Hand-ported from the TS/Swift/Rust generated runtime
-# (RethinkingDagrTS/src/dagr_reader.ts, Sources/RethinkingDagr/DagrRuntime.swift).
-# This is the "26 Mojo Codegen Plan.md" §7 Phase 0 surface: just enough of the
+# (targets/typescript/src/dagr_reader.ts, targets/swift/Sources/DagrExample/DagrRuntime.swift).
+# This is the "spec/28-mojo-codegen-plan.md" §7 Phase 0 surface: just enough of the
 # wire primitives to lazily read a regular (vtable) node of required scalars.
 #
 # Reader model (plan §8.2): a single borrowed `Span[UInt8, origin]`; Mojo reads
@@ -185,7 +185,7 @@ def read_bitset(buf: Span[UInt8, _], at: Int, nbytes: Int) raises -> UInt64:
     return b
 
 
-# ── Packed-node primitives (06 Packed Nodes.md) ──────────────────────────────
+# ── Packed-node primitives (spec/07-packed-nodes.md) ──────────────────────────────
 from std.math import inf, nan
 
 # Signed packed ints are ZigZag-LEB. Returns (value, bytesConsumed).
@@ -279,7 +279,7 @@ def decode_packed_bf16(buf: Span[UInt8, _], at: Int) raises -> Tuple[BFloat16, I
     return (BFloat16(0.0), 1)  # tag 0 (+0)
 
 
-# ── Packed arrays (materialized) — 06 §5 ────────────────────────────────────
+# ── Packed arrays (materialized) — 07 §5 ────────────────────────────────────
 # Packed array elements are variable-width (LEB / packed-float / mixed), so unlike
 # the regular fixed-width arrays these are decoded eagerly into an owned wrapper
 # with the same `len()` / `get(i)` API. `OwnedArray[T]` holds a `List[T]`.
@@ -745,7 +745,7 @@ def decode_data_opt_list(buf: Span[UInt8, _], at: Int) raises -> List[Optional[L
     return out^
 
 
-# Packed union header `[LEB (typeId<<3)|code][payload]` (06 §8). Returns
+# Packed union header `[LEB (typeId<<3)|code][payload]` (07 §8). Returns
 # (payload_pos, tag, code): tag = raw>>3, code = raw&7 (payload size class:
 # 0 LEB · 1/2/3/4 = 1/2/4/8 raw bytes · 5 packed-float · 6 len-prefixed block).
 def packed_union_header(buf: Span[UInt8, _], at: Int) raises -> Tuple[Int, UInt8, UInt8]:
@@ -772,7 +772,7 @@ def packed_union_payload_bytes(buf: Span[UInt8, _], ep: Int, code: Int) raises -
     return r[1] + Int(r[0])
 
 
-# Raw embedded-graph leaf (17 §4): a `raw` node-ref inline entry
+# Raw embedded-graph leaf (18 §4): a `raw` node-ref inline entry
 # `[LEB payloadLen][pad?][standalone .dagr blob]`. `pos` = payloadLen LEB start;
 # `has_pad` = the embedded graph is alignment-bearing (a leading pad byte precedes
 # the blob framing). Returns the absolute root-node position inside the blob (opened
