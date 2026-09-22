@@ -84,29 +84,33 @@ def scenario(rng: random.Random):
     )
     kv = None
     if rng.random() < 0.9:
-        host = rng.choice([0, 4096])
-        disk = rng.choice([0, 65536])
+        host = rng.choice([0, 4096 * 131072])      # 26.6.0 counts the host/disk tiers in bytes
+        disk = rng.choice([0, 65536 * 131072])
         dkv = rng.choice([0, 0, 2])
         per = [SimpleNamespace(total=2048, used=rng.randint(0, 2048)) for _ in range(dp)]
         hper = [SimpleNamespace(total=host, used=rng.randint(0, host)) for _ in range(dp)]
         dper = [SimpleNamespace(total=disk, used=rng.randint(0, disk)) for _ in range(dp)]
         agg = SimpleNamespace(
-            device_blocks_served=rng.randint(0, 100), h2d_blocks_copied=rng.randint(0, 50),
-            d2h_blocks_copied=rng.randint(0, 50), cross_replica_blocks_copied=rng.randint(0, 9),
-            cross_replica_bytes_copied=rng.randint(0, 1 << 30), disk_blocks_written=rng.randint(0, 9),
-            disk_blocks_read=rng.randint(0, 9), inflight_disk_ops=rng.randint(0, 3),
+            device_blocks_served=rng.randint(0, 100),
+            h2d_bytes_copied=rng.randint(0, 50 << 17), d2h_bytes_copied=rng.randint(0, 50 << 17),
+            cross_replica_blocks_copied=rng.randint(0, 9),
+            cross_replica_bytes_copied=rng.randint(0, 1 << 30),
+            disk_bytes_written=rng.randint(0, 9 << 17), disk_bytes_read=rng.randint(0, 9 << 17),
+            inflight_disk_ops=rng.randint(0, 3),
             nixl_read_latency_avg_ms=rng.choice([0.0, rng.random() * 5]),
             nixl_write_latency_avg_ms=rng.choice([0.0, rng.random() * 5]),
             rpc_acquire_latency_avg_ms=rng.choice([0.0, rng.random()]),
             rpc_read_latency_avg_ms=rng.choice([0.0, rng.random()]),
             nixl_read_gib_per_s=rng.random() * 3, nixl_write_gib_per_s=rng.random() * 3,
             dkv_connected_clients=rng.randint(0, dkv), dkv_total_clients=dkv,
+            nixl_read_latency_max_ms=rng.choice([0.0, rng.random() * 9]),
             dkv_reconnect_attempts=rng.randint(0, 5), nixl_read_blocks=rng.randint(0, 20),
+            nixl_read_bytes=rng.randint(0, 20 << 17),
         )
         kv = SimpleNamespace(
             block_count=lambda i, per=per: per[i],
-            host_block_count=lambda i, hper=hper: hper[i],
-            disk_block_count=lambda i, dper=dper: dper[i],
+            host_byte_count=lambda i, hper=hper: hper[i],
+            disk_byte_count=lambda i, dper=dper: dper[i],
             get_metrics_aggregated=lambda agg=agg: agg,
             reset_metrics=lambda: None,
         )
@@ -118,6 +122,8 @@ def scenario(rng: random.Random):
             draft_tokens_generated=rng.randint(0, 2000), draft_tokens_accepted=rng.randint(0, 2000),
             avg_acceptance_length=rng.random() * k, num_speculative_tokens=k,
             acceptance_rate_per_position=[rng.random() for _ in range(k)],
+            # 26.6.0 gates every spec-decode value on this; 0 takes the non-spec branch
+            num_verifications=rng.choice([0, rng.randint(1, 64)]),
         )
     completed = None
     if rng.random() < 0.7:

@@ -3,8 +3,8 @@
 For random scheduler steps (parity_test.scenario) and random KV state on a real BlockManager
 (DP 1/2/4, free blocks per pool, random KVCacheMetrics), compute_values is run twice from the
 same state:
-  A  kv_cache = proxy exposing only block_count / host_block_count / get_metrics_aggregated /
-     disk_block_count / reset_metrics (original per-call path)
+  A  kv_cache = proxy exposing only block_count / host_byte_count / get_metrics_aggregated /
+     disk_byte_count / reset_metrics (original per-call path)
   B  kv_cache = the PagedKVCacheManager itself (metrics_snapshot path)
 The value tuples must be identical (values and types), and so must the post-reset state.
 Connectors: NullConnector (fast path) and a tiered fake overriding counts, metrics and reset
@@ -28,7 +28,7 @@ importlib.import_module("max._core_mojo")
 
 from max.nn.kv_cache.metrics import KVCacheMetrics  # noqa: E402
 from max.pipelines.kv_cache.connectors.null_connector import NullConnector  # noqa: E402
-from max.pipelines.kv_cache.kv_connector import BlockCount  # noqa: E402
+from max.pipelines.kv_cache.kv_connector import ByteCount  # noqa: E402
 from max.pipelines.kv_cache.paged_kv_cache.block_manager import BlockManager  # noqa: E402
 from max.pipelines.kv_cache.paged_kv_cache.cache_manager import PagedKVCacheManager  # noqa: E402
 from max.serve.scheduler.utils import BatchMetrics  # noqa: E402
@@ -51,17 +51,17 @@ def random_metrics(rng: random.Random) -> KVCacheMetrics:
 
 class TieredFake(NullConnector):
     def __init__(self) -> None:
-        self.host = BlockCount(free=0, total=0)
-        self.disk = BlockCount(free=0, total=0)
+        self.host = ByteCount(free=0, total=0)
+        self.disk = ByteCount(free=0, total=0)
         self.m = KVCacheMetrics()
         self.resets = 0
 
     @property
-    def host_block_count(self) -> BlockCount:
+    def host_byte_count(self) -> ByteCount:
         return self.host
 
     @property
-    def disk_block_count(self) -> BlockCount:
+    def disk_byte_count(self) -> ByteCount:
         return self.disk
 
     @property
@@ -91,16 +91,16 @@ def set_state(mgr: PagedKVCacheManager, rng_state, dp: int, tiered: bool) -> Non
     bm._metrics = random_metrics(rng)
     if tiered:
         c = mgr._connector
-        ht, dt = rng.choice([0, 4096]), rng.choice([0, 65536])
-        c.host = BlockCount(free=rng.randint(0, ht), total=ht)
-        c.disk = BlockCount(free=rng.randint(0, dt), total=dt)
+        ht, dt = rng.choice([0, 4096 << 17]), rng.choice([0, 65536 << 17])
+        c.host = ByteCount(free=rng.randint(0, ht), total=ht)
+        c.disk = ByteCount(free=rng.randint(0, dt), total=dt)
         c.m = random_metrics(rng)
 
 
 def proxy(mgr: PagedKVCacheManager) -> SimpleNamespace:
     return SimpleNamespace(
-        block_count=mgr.block_count, host_block_count=mgr.host_block_count,
-        disk_block_count=mgr.disk_block_count,
+        block_count=mgr.block_count, host_byte_count=mgr.host_byte_count,
+        disk_byte_count=mgr.disk_byte_count,
         get_metrics_aggregated=mgr.get_metrics_aggregated, reset_metrics=mgr.reset_metrics,
     )
 

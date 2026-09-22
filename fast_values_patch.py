@@ -105,15 +105,15 @@ BLOCK_COUNT_FAST = {
             else:
 {original}
 """,
-    "host_block_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
-                host_block_counts = (kv_cache.host_block_count(0),)
-                total_host_kv_blocks = host_block_counts[0].total
+    "host_byte_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
+                host_byte_counts = (kv_cache.host_byte_count(0),)
+                total_host_kv_bytes = host_byte_counts[0].total
             else:
 {original}
 """,
-    "disk_block_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
-                disk_block_counts = (kv_cache.disk_block_count(0),)
-                total_disk_kv_blocks = disk_block_counts[0].total
+    "disk_byte_counts": """            if num_replicas == 1:  # PROTOTYPE fast path, same values
+                disk_byte_counts = (kv_cache.disk_byte_count(0),)
+                total_disk_kv_bytes = disk_byte_counts[0].total
             else:
 {original}
 """,
@@ -199,21 +199,22 @@ CACHE_MANAGER = os.path.join(PKG, "pipelines", "kv_cache", "paged_kv_cache", "ca
 
 # Order of the tuple returned by PagedKVCacheManager.metrics_snapshot (compute_values locals).
 KV_SNAPSHOT_NAMES = (
-    "total_kv_blocks", "used_kv_pct", "total_host_kv_blocks", "used_host_kv_pct",
-    "device_blocks_served", "h2d_blocks_copied", "d2h_blocks_copied",
-    "cross_replica_blocks_copied", "cross_replica_bytes_copied", "disk_blocks_written",
-    "disk_blocks_read", "inflight_disk_ops", "total_disk_kv_blocks", "used_disk_kv_pct",
+    "total_kv_blocks", "used_kv_pct", "total_host_kv_bytes", "used_host_kv_pct",
+    "device_blocks_served", "h2d_bytes_copied", "d2h_bytes_copied",
+    "cross_replica_blocks_copied", "cross_replica_bytes_copied", "disk_bytes_written",
+    "disk_bytes_read", "inflight_disk_ops", "total_disk_kv_bytes", "used_disk_kv_pct",
     "nixl_read_latency_avg_ms", "nixl_write_latency_avg_ms", "rpc_acquire_latency_avg_ms",
     "rpc_read_latency_avg_ms", "nixl_read_gib_per_s", "nixl_write_gib_per_s",
-    "dkv_connected_clients", "dkv_total_clients", "dkv_reconnect_attempts", "dkv_read_blocks",
+    "nixl_read_latency_max_ms", "dkv_connected_clients", "dkv_total_clients",
+    "dkv_reconnect_attempts", "dkv_read_blocks", "dkv_read_bytes",
 )
 
 SNAPSHOT_METHOD = '''
     def metrics_snapshot(self, num_replicas: int) -> tuple:  # PROTOTYPE
         """Every KV value BatchMetrics records, as one flat tuple, then resets the counters.
 
-        Same values, in the same call order, as block_count / host_block_count /
-        get_metrics_aggregated / disk_block_count per replica followed by reset_metrics;
+        Same values, in the same call order, as block_count / host_byte_count /
+        get_metrics_aggregated / disk_byte_count per replica followed by reset_metrics;
         order: fast_values_patch.KV_SNAPSHOT_NAMES. Connectors that keep the default
         (empty) tier counts, metrics and reset skip those calls.
         """
@@ -236,23 +237,23 @@ SNAPSHOT_METHOD = '''
         assert total_kv_blocks > 0
         used_kv_pct = used_kv_blocks / total_kv_blocks
 
-        total_host_kv_blocks = 0
+        total_host_kv_bytes = 0
         used_host_kv_pct = 0.0
-        total_disk_kv_blocks = 0
+        total_disk_kv_bytes = 0
         used_disk_kv_pct = 0.0
         if not default_counts:
-            host = [self._replica[i].connector.host_block_count for i in range(num_replicas)]
-            total_host_kv_blocks = sum(bc.total for bc in host)
-            if total_host_kv_blocks > 0:
-                used_host_kv_pct = sum(bc.used for bc in host) / total_host_kv_blocks
+            host = [self._replica[i].connector.host_byte_count for i in range(num_replicas)]
+            total_host_kv_bytes = sum(bc.total for bc in host)
+            if total_host_kv_bytes > 0:
+                used_host_kv_pct = sum(bc.used for bc in host) / total_host_kv_bytes
 
         m = bm._metrics if empty_metrics and default_manager else bm.metrics
 
         if not default_counts:
-            disk = [self._replica[i].connector.disk_block_count for i in range(num_replicas)]
-            total_disk_kv_blocks = sum(bc.total for bc in disk)
-            if total_disk_kv_blocks > 0:
-                used_disk_kv_pct = sum(bc.used for bc in disk) / total_disk_kv_blocks
+            disk = [self._replica[i].connector.disk_byte_count for i in range(num_replicas)]
+            total_disk_kv_bytes = sum(bc.total for bc in disk)
+            if total_disk_kv_bytes > 0:
+                used_disk_kv_pct = sum(bc.used for bc in disk) / total_disk_kv_bytes
 
         read_ms = m.nixl_read_latency_total_ms
         write_ms = m.nixl_write_latency_total_ms
@@ -271,14 +272,14 @@ SNAPSHOT_METHOD = '''
             0.0 if write_ms <= 0 else (m.nixl_write_bytes / (1 << 30)) / (write_ms / 1000)
         )
         out = (
-            total_kv_blocks, used_kv_pct, total_host_kv_blocks, used_host_kv_pct,
-            m.device_blocks_served, m.h2d_blocks_copied, m.d2h_blocks_copied,
-            m.cross_replica_blocks_copied, m.cross_replica_bytes_copied, m.disk_blocks_written,
-            m.disk_blocks_read, m.inflight_disk_ops, total_disk_kv_blocks, used_disk_kv_pct,
+            total_kv_blocks, used_kv_pct, total_host_kv_bytes, used_host_kv_pct,
+            m.device_blocks_served, m.h2d_bytes_copied, m.d2h_bytes_copied,
+            m.cross_replica_blocks_copied, m.cross_replica_bytes_copied, m.disk_bytes_written,
+            m.disk_bytes_read, m.inflight_disk_ops, total_disk_kv_bytes, used_disk_kv_pct,
             nixl_read_latency_avg_ms, nixl_write_latency_avg_ms, rpc_acquire_latency_avg_ms,
             rpc_read_latency_avg_ms, nixl_read_gib_per_s, nixl_write_gib_per_s,
-            m.dkv_connected_clients, m.dkv_total_clients, m.dkv_reconnect_attempts,
-            m.nixl_read_blocks,
+            m.nixl_read_latency_max_ms, m.dkv_connected_clients, m.dkv_total_clients,
+            m.dkv_reconnect_attempts, m.nixl_read_blocks, m.nixl_read_bytes,
         )
         if empty_metrics and default_manager:
             # BlockManager.reset_metrics with a no-op connector reset: a fresh zeroed
@@ -306,8 +307,8 @@ def _snapshot_flags(block_manager, connector) -> tuple[bool, bool, bool]:
 
     ctype = type(connector)
     default_counts = (
-        ctype.host_block_count is KVConnector.host_block_count
-        and ctype.disk_block_count is KVConnector.disk_block_count
+        ctype.host_byte_count is KVConnector.host_byte_count
+        and ctype.disk_byte_count is KVConnector.disk_byte_count
     )
     empty_metrics = (
         ctype.metrics in (NullConnector.metrics, KVConnector.metrics)
