@@ -4,10 +4,10 @@
 # /metrics endpoint, so a scrape and an export describe the same registry; only the encoding
 # differs (Prometheus text vs an ExportMetricsServiceRequest in protobuf).
 #
-# Build (flare's pixi env, Mojo 1.0):
-#   cd ~/dev/flare_check && pixi run mojo build -I . -I <proto>/gen/mojo -I <proto> \
-#       <proto>/otlp_push.mojo -o <proto>/otlp_push
-# Run (from flare's directory): ./otlp_push <dir> <endpoint url> [interval_s] [iterations]
+# Build (the project's own env — flare tracks Mojo 1.1 since 2026-09-20):
+#   .venv/bin/mojo build -I ../flare_check -I gen/mojo -I . -I third_party \
+#       otlp_push.mojo -o otlp_push
+# Run (from flare's directory): <proto>/otlp_push <dir> <endpoint url> [interval_s] [iterations]
 from std.sys import argv
 from std.time import perf_counter_ns, sleep
 

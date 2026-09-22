@@ -24,6 +24,11 @@ faster. Measured on an M4 Max, MAX 26.6.0.dev2026082707, Qwen3-0.6B and Qwen2.5-
 Apple GPU. `docs/measurements.md` is the full lab log: every number here, how it was taken, and
 the ideas that measurement killed.
 
+The tree now builds on **MAX 26.6.0 and Mojo 1.1.0**, one toolchain for everything including the
+flare-served endpoint. The table above was taken on the pinned nightly it names; the checks and
+the per-stage costs were re-run on 26.6.0 and hold (last section of the lab log), but the
+headline table has not been re-measured end to end.
+
 ## How it fits together
 
 ```
@@ -70,9 +75,7 @@ a clone; their results are in `docs/measurements.md`.
 
 ```sh
 uv venv -p 3.12 .venv
-uv pip install -p .venv/bin/python --prerelease=allow "max[serve]==26.6.0.dev2026082707" \
-    "mojo==1.1.0.dev2026082707" msgspec httpx pillow \
-    --extra-index-url https://whl.modular.com/nightly/simple/ --index-strategy unsafe-best-match
+uv pip install -p .venv/bin/python "max[serve]==26.6.0" "mojo==1.1.0" msgspec httpx pillow
 
 .venv/bin/python gen_record_code.py           # record conversion code from record_spec.py
 .venv/bin/mojo build --emit shared-lib -I gen/mojo -I . -I third_party metrics_log.mojo -o metrics_log.so
@@ -81,15 +84,22 @@ PATCH_FAST_VALUES=1 PATCH_KV_SNAPSHOT=1 .venv/bin/python max_patch.py
 MEAS=1 MAX_SERVE_RECORD_METRICS_MMAP=1 sh run_server.sh myrun 1 record
 ```
 
-The Mojo endpoint builds against flare (Mojo 1.0), the in-process extension against MAX's
-Mojo 1.1; the shared sources compile on both:
+One toolchain builds everything. flare tracks Mojo 1.1 as of its `build: upgrade mojo to 1.1.0`
+(2026-09-20), so the standalone endpoint and the OTLP pusher compile with the same
+`.venv/bin/mojo` as the in-process extension — flare is a source checkout on the include path,
+no second environment:
 
 ```sh
 .venv/bin/python gen_prom_table.py runs/myrun.metrics    # instrument table from MAX
-cd ../flare_check && pixi run mojo build -I . -I ../dagr_max_prototype/gen/mojo \
-    -I ../dagr_max_prototype -I ../dagr_max_prototype/third_party \
-    ../dagr_max_prototype/telemetry_server.mojo -o ../dagr_max_prototype/telemetry_server
+.venv/bin/mojo build -I ../flare_check -I gen/mojo -I . -I third_party \
+    telemetry_server.mojo -o telemetry_server
+.venv/bin/mojo build -I ../flare_check -I gen/mojo -I . -I third_party \
+    otlp_push.mojo -o otlp_push
 ```
+
+flare's C FFI wrappers (`build/libflare_*.so`, built by its pixi activation) are still
+`dlopen`ed by relative path, so both binaries run with flare's directory as their working
+directory.
 
 ## Durability
 
@@ -126,7 +136,7 @@ the mapping, and the telemetry reader polls every 20 ms.
 
 | Command | Checks |
 | --- | --- |
-| `parity_test.py 3000` | 78,816 measurements across 50 instruments identical between the original path and record → file → decode → publish |
+| `parity_test.py 3000` | 79,604 measurements across 51 instruments identical between the original path and record → file → decode → publish |
 | `tests/fast_values_equiv.py`, `tests/kv_snapshot_equiv.py` | the `compute_values` speedups against the pristine MAX classes, 20,000 random inputs each |
 | `tests/mmap_check.py`, `tests/mmap_tail_check.py` | the mmap log is byte-identical to the buffered one; a reader sees every record while it is open |
 | `tests/measurement_roundtrip.py` | measurements survive name, value, attributes and timestamp |

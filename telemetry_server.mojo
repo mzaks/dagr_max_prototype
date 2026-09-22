@@ -7,9 +7,9 @@
 # state sits in a heap cell the handler addresses by pointer — the same shape flare's own
 # metrics middleware uses.
 #
-# Build (flare's pixi env, Mojo 1.0):
-#   cd ~/dev/flare_check && pixi run mojo build -I . -I <proto>/gen/mojo -I <proto> \
-#       <proto>/telemetry_server.mojo -o <proto>/telemetry_server
+# Build (the project's own env — flare tracks Mojo 1.1 since 2026-09-20):
+#   .venv/bin/mojo build -I ../flare_check -I gen/mojo -I . -I third_party \
+#       telemetry_server.mojo -o telemetry_server
 # Run (from flare's directory: its FFI wrappers are dlopen'd by relative path):
 #   MAX_SERVE_MEASUREMENT_LOG=<dir> <proto>/telemetry_server [port]
 from std.os import getenv
