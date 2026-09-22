@@ -246,6 +246,8 @@ Not measured: the same aggregation in base mode (it happens there too, minus the
 plus unpickling), so this is not yet a before/after.
 
 ### flare (github.com/ehsanmok/flare) as the basis for a Mojo telemetry process
+*(The toolchain split this section and the next two describe is over — see "One toolchain" at
+the end of this log.)*
 - Does NOT build with MAX's pinned Mojo 1.1.0.dev2026082707: flare main locks Mojo 1.0.0
   (`pixi.lock`), and `flare/http/_client/parse.mojo` uses `String(capacity=…)`, renamed to
   `capacity_bytes` in 1.1. Version skew, not a deep incompatibility.
@@ -486,3 +488,89 @@ Published metrics were identical to baseline in every run.
 With the shipped defaults (msync off, 1 s interval in mmap mode) a flush is 0.50 µs — the
 no-op plus its call — and the append is back where it was: encode 5.0–5.3 µs, append median
 16.9–18.0 µs, 95 flushes per 600 steps (`defaults_1`).
+
+### One toolchain: MAX 26.6.0 and Mojo 1.1.0, flare included
+flare moved to Mojo 1.1 upstream (`build: upgrade mojo to 1.1.0`, 2026-09-20), which ends the
+split this log's earlier flare sections describe — but not by flare meeting MAX's pin. flare
+main needs the **released** 1.1.0: it uses `CStringSpan` / `as_c_string_span`, which MAX's
+pinned `1.1.0.dev2026082707` nightly (2026-08-27) does not have, so the skew simply reversed
+direction. What closes it is MAX **26.6.0** stable (2026-09-17), whose Mojo is 1.1.0 — one
+compiler for the in-process extension, the standalone endpoint and the OTLP pusher:
+
+```sh
+uv pip install -p .venv/bin/python "max[serve]==26.6.0" "mojo==1.1.0" msgspec httpx pillow
+.venv/bin/mojo build -I ../flare_check -I gen/mojo -I . -I third_party telemetry_server.mojo -o telemetry_server
+```
+
+- `telemetry_server.mojo` and `otlp_push.mojo` compile against flare main **unchanged**: v0.11's
+  prelude/serve refactor did not touch `Handler`, `ok`/`not_found`, `Pool`, `HttpClient` or
+  `Request`/`Response`. No pixi environment, and the `json` Mojo package is not needed to build
+  either binary. flare's C FFI wrappers are untouched upstream since 0.10, so its existing
+  `build/libflare_*.so` still serve — and they are still `dlopen`ed by relative path, so the
+  binaries still run with flare's directory as their working directory.
+- The two version-neutrality workarounds this log recorded (a value moved out of a `Dict` entry,
+  `seek` taking `UInt64`, `String(capacity=…)` vs `capacity_bytes=`) are no longer load-bearing;
+  the sources keep them, they simply cost nothing.
+- Gone in the other direction: `mmap_destination.mojo` now uses `unsafe_bitcast` and
+  `as_c_string_span`, and Dagr's generated writer hashes a `UInt64` key as
+  `hasher.update(self.h.as_bytes())` — `update(UInt64)` is gone from `std.hashlib` in 1.1.0.
+  That one is fixed in Dagr's own Mojo runtime, not only in the committed `gen/mojo`.
+
+#### What the MAX bump moved, and what it cost
+26.6.0 renamed the KV connector's external tiers from blocks to **bytes** and added two dKV
+values. Six `BatchMetrics` fields were renamed and two are new, so `record_spec.py` (and with it
+the schema, the generated sinks and the record's wire layout) had to follow — a major Dagr bump,
+`dagr build --allow-breaking`:
+
+| | 26.6.0.dev2026082707 | 26.6.0 |
+|---|---|---|
+| `total_host_kv_blocks` / `total_disk_kv_blocks` | blocks | `total_host_kv_bytes` / `total_disk_kv_bytes` |
+| `h2d_blocks_copied` / `d2h_blocks_copied` | blocks | `h2d_bytes_copied` / `d2h_bytes_copied` |
+| `disk_blocks_read` / `disk_blocks_written` | blocks | `disk_bytes_read` / `disk_bytes_written` |
+| — | — | `nixl_read_latency_max_ms`, `dkv_read_bytes` (new) |
+| record fields | 55 + 3 | 57 + 3 |
+
+The patch scripts followed the same renames: the per-tier fast paths now wrap
+`host_byte_count` / `disk_byte_count`, and `metrics_snapshot` returns 26 values instead of 24
+(`KV_SNAPSHOT_NAMES`). The AST-located patches themselves all still applied — nothing had to be
+found a new way, which is the point of locating by structure. Two of MAX's own shapes did change
+under the test doubles: the spec-decode values are now gated on `num_verifications > 0`, and the
+connector's tier snapshots are `ByteCount`, not `BlockCount`.
+
+#### Verified on 26.6.0
+Every check in the README's table, re-run on the new toolchain:
+
+| Check | Result |
+|---|---|
+| `parity_test.py 3000` | 79,604 measurements identical across **51** instruments (was 50), rebuilt `BatchMetrics` equal for every step; 275.3 B/step (was 252 — two more fields and this run's random data) |
+| `tests/fast_values_equiv.py` | 20,000 batches all fields equal; 20,000 `KVCacheMetrics`, 28 fields + 10 properties equal |
+| `tests/kv_snapshot_equiv.py` | 20,000 steps, value tuples and post-reset state identical, all six dp × connector combinations |
+| `tests/mmap_check.py`, `mmap_tail_check.py` | byte-identical to the buffered log at 4 KB and 64 MB chunks; tailer saw 3,000/3,000 |
+| `tests/measurement_roundtrip.py` | 5,000 measurements round-tripped |
+| `check.py` (needs `gen/python`) | all four hand-off paths byte-identical, reflective reader matches field for field |
+| `tests/live_incremental.py` | 207,838 measurements in bursts, 9 scrapes during the run, final body byte-identical to one-shot |
+| `tests/otlp_check.py` | 19 metrics, 64 value checks, 0 mismatches |
+| `tests/diff_metrics.py` vs MAX (`upgrade_base`) | **1831 series / 39 families both sides: 1826 equal, 5 within 1e-9, 0 differing, 0 on one side only** |
+
+The endpoint comparison is the one that matters, and it is the same verdict as `meas_base_6`
+on the old toolchain (1771 equal, 8 within 1e-9) — with 52 more series, because 26.6.0 publishes
+more. Two GPU lifetimes, Qwen3-0.6B on the Apple GPU, batch 512 then 32:
+
+| stage median (µs), 600 steps | `upgrade_base` | `upgrade_rec` |
+|---|---|---|
+| create | 31.6–36.8 | 15.5–19.0 |
+| publish | 50.4–57.5 | 0.1 |
+| record_append | — | 16.8–22.9 |
+
+The record stream closed on a record boundary with 607 records (CE 5, TG 602), matching the
+Prometheus `batch_size` counts exactly, at 181.4 B/record.
+
+One thing the upgrade did *not* preserve: old record streams. Dagr addresses fields by index, so
+the two new values — kept in MAX's own field order, `nixl_read_latency_max_ms` after
+`nixl_write_gib_per_s` and `dkv_read_bytes` after `dkv_read_blocks` — shift every field after
+them. That is what the gate calls a wire break, and it is real: `runs/*.dagr` from the day before
+this bump no longer decode (`missing required field cache_hit_external_tokens`, read at the
+shifted index). Appending the two at the end instead would have kept the old indices — the six
+renames alone are index-stable, same slot and same width — but those streams still hold *blocks*
+where the schema now says *bytes*, so what would survive is the read, not the meaning. Matching
+MAX's order was worth more than decoding stale records.
