@@ -9,8 +9,12 @@ Build: .venv/bin/python -I "$(which dagr)"  -- or simply: dagr build
 import os
 import sys
 
-from dagr_config import Library, Mojo, Python
-from dagr_dsl import DataSink, Enum, Node, SharedBuffer, required, t
+try:                                    # the copy `dagr build` writes into gen/python, whose
+    from dagr_config import Library, Mojo, Python          # runtime ships the DSL flat; the
+    from dagr_dsl import DataSink, Enum, Node, SharedBuffer, required, t   # classes must be the
+except ModuleNotFoundError:             # same objects the generated layout engine sees
+    from dagr.config import Library, Mojo, Python           # the CLI's own package layout
+    from dagr.dsl import DataSink, Enum, Node, SharedBuffer, required, t
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from record_spec import EXTRA, FIELDS, SUBRECORDS  # noqa: E402
